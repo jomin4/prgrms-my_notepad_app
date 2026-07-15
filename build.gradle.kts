@@ -5,6 +5,7 @@ plugins {
     kotlin("jvm") version "2.4.0"
     id("org.jetbrains.kotlin.plugin.compose") version "2.4.0"
     id("org.jetbrains.compose") version "1.9.0"
+    id("app.cash.sqldelight") version "2.3.2"
 }
 
 repositories {
@@ -26,6 +27,15 @@ kotlin {
 dependencies {
     implementation(compose.desktop.currentOs)
     implementation(compose.material3)
+    implementation("app.cash.sqldelight:sqlite-driver:2.3.2")
+}
+
+sqldelight {
+    databases {
+        create("NoteDb") {
+            packageName.set("db")
+        }
+    }
 }
 
 compose.desktop {

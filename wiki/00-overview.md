@@ -33,5 +33,6 @@ tags: [overview]
 - [x] 설계 v1(데이터 모델·도구 스키마·아키텍처/NIM 흐름)
 - [x] 개발 M1.1 — KMP/Compose 스캐폴드 + 첫 실행 창
 - [x] 개발 M1.2 — 노트 UI(목록·편집기·검색·삭제, Quiet Ink)
-- [ ] 개발 M1.3 — 로컬 저장(SQLDelight) ← 다음
+- [x] 개발 M1.3 — 로컬 저장(SQLDelight) · **M1 완료**
+- [ ] 개발 M2 — NVIDIA NIM 연결(설정 API 키 → AI 채팅 → 텍스트 도구) ← 다음
 - 상세: [진행 로그](_meta/changelog.md)

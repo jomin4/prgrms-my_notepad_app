@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS note (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    body TEXT NOT NULL,
+    updatedAt INTEGER NOT NULL
+);
+
+selectAll:
+SELECT * FROM note ORDER BY updatedAt DESC;
+
+insert:
+INSERT INTO note(title, body, updatedAt) VALUES (?, ?, ?);
+
+lastInsertId:
+SELECT last_insert_rowid();
+
+update:
+UPDATE note SET title = ?, body = ?, updatedAt = ? WHERE id = ?;
+
+delete:
+DELETE FROM note WHERE id = ?;

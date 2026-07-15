@@ -34,27 +34,27 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-/** 메모리 상의 노트 한 건. (M1.3에서 로컬 DB로 저장 예정) */
-class Note(title: String, body: String) {
-    val id: Long = nextId()
+/** 화면에서 편집 중인 노트 한 건. id는 DB 행 id. */
+class NoteItem(val id: Long, title: String, body: String, updatedAt: Long) {
     var title by mutableStateOf(title)
     var body by mutableStateOf(body)
-    var updatedAt by mutableStateOf(System.currentTimeMillis())
+    var updatedAt by mutableStateOf(updatedAt)
     fun touch() { updatedAt = System.currentTimeMillis() }
-    companion object {
-        private var counter = 0L
-        private fun nextId(): Long = ++counter
-    }
 }
 
 @Composable
 fun App() {
     val c = if (isSystemInDarkTheme()) DarkInk else LightInk
+    val repo = remember { NotesRepo() }
     val notes = remember {
-        mutableStateListOf(
-            Note("환영합니다", "로컬 AI 노트에 오신 걸 환영해요.\n왼쪽에서 새 노트를 만들어 보세요."),
-            Note("할 일", "- 우유 사기\n- 저녁 운동"),
-        )
+        mutableStateListOf<NoteItem>().also { list ->
+            val loaded = repo.all()
+            if (loaded.isEmpty()) {
+                list.add(repo.add("환영합니다", "로컬 AI 노트에 오신 걸 환영해요.\n이제 껐다 켜도 노트가 유지됩니다."))
+            } else {
+                list.addAll(loaded)
+            }
+        }
     }
     var selectedId by remember { mutableStateOf(notes.firstOrNull()?.id) }
     var query by remember { mutableStateOf("") }
@@ -70,7 +70,7 @@ fun App() {
             onQuery = { query = it },
             onSelect = { selectedId = it },
             onNew = {
-                val n = Note("", "")
+                val n = repo.add("", "")
                 notes.add(0, n)
                 selectedId = n.id
                 query = ""
@@ -78,10 +78,15 @@ fun App() {
         )
         Box(Modifier.weight(1f).fillMaxHeight().background(c.surface)) {
             if (selected != null) {
-                Editor(c, selected, onDelete = {
-                    notes.remove(selected)
-                    selectedId = notes.firstOrNull()?.id
-                })
+                Editor(
+                    c = c, note = selected,
+                    onEdit = { repo.update(it) },
+                    onDelete = {
+                        repo.delete(selected.id)
+                        notes.remove(selected)
+                        selectedId = notes.firstOrNull()?.id
+                    },
+                )
             } else {
                 BasicText(
                     "노트를 선택하거나 새로 만드세요",
@@ -95,7 +100,7 @@ fun App() {
 
 @Composable
 private fun Sidebar(
-    c: Ink, notes: List<Note>, selectedId: Long?, query: String,
+    c: Ink, notes: List<NoteItem>, selectedId: Long?, query: String,
     onQuery: (String) -> Unit, onSelect: (Long) -> Unit, onNew: () -> Unit,
 ) {
     Column(Modifier.width(240.dp).fillMaxHeight().background(c.soft)) {
@@ -157,7 +162,7 @@ private fun Sidebar(
 }
 
 @Composable
-private fun Editor(c: Ink, note: Note, onDelete: () -> Unit) {
+private fun Editor(c: Ink, note: NoteItem, onEdit: (NoteItem) -> Unit, onDelete: () -> Unit) {
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             Spacer(Modifier.weight(1f))
@@ -172,7 +177,7 @@ private fun Editor(c: Ink, note: Note, onDelete: () -> Unit) {
                     BasicText("제목", style = TextStyle(color = c.faint, fontFamily = FontFamily.Serif, fontSize = 26.sp, fontWeight = FontWeight.Medium))
                 }
                 BasicTextField(
-                    value = note.title, onValueChange = { note.title = it; note.touch() },
+                    value = note.title, onValueChange = { note.title = it; note.touch(); onEdit(note) },
                     textStyle = TextStyle(color = c.ink, fontFamily = FontFamily.Serif, fontSize = 26.sp, fontWeight = FontWeight.Medium),
                     cursorBrush = SolidColor(c.primary), modifier = Modifier.fillMaxWidth(),
                 )
@@ -183,7 +188,7 @@ private fun Editor(c: Ink, note: Note, onDelete: () -> Unit) {
                     BasicText("여기에 노트를 작성하세요…", style = TextStyle(color = c.faint, fontFamily = FontFamily.Serif, fontSize = 16.sp))
                 }
                 BasicTextField(
-                    value = note.body, onValueChange = { note.body = it; note.touch() },
+                    value = note.body, onValueChange = { note.body = it; note.touch(); onEdit(note) },
                     textStyle = TextStyle(color = c.ink, fontFamily = FontFamily.Serif, fontSize = 16.sp, lineHeight = 26.sp),
                     cursorBrush = SolidColor(c.primary), modifier = Modifier.fillMaxSize(),
                 )
