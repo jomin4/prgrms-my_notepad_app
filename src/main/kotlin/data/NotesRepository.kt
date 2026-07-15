@@ -1,8 +1,11 @@
+package data
+
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import db.NoteDb
+import domain.NoteItem
 import java.io.File
 
-/** 노트를 로컬 SQLite에 저장/로드하는 저장소. DB 파일은 사용자 홈의 .local-ai-note/notes.db. */
+/** 노트를 로컬 SQLite에 저장/로드. DB 파일: ~/.local-ai-note/notes.db. */
 class NotesRepo {
     private val db: NoteDb
 
@@ -15,8 +18,7 @@ class NotesRepo {
     }
 
     fun all(): List<NoteItem> =
-        db.noteQueries.selectAll().executeAsList()
-            .map { NoteItem(it.id, it.title, it.body, it.updatedAt) }
+        db.noteQueries.selectAll().executeAsList().map { NoteItem(it.id, it.title, it.body, it.updatedAt) }
 
     fun add(title: String, body: String): NoteItem {
         val now = System.currentTimeMillis()
@@ -25,11 +27,7 @@ class NotesRepo {
         return NoteItem(id, title, body, now)
     }
 
-    fun update(n: NoteItem) {
-        db.noteQueries.update(n.title, n.body, n.updatedAt, n.id)
-    }
+    fun update(n: NoteItem) = db.noteQueries.update(n.title, n.body, n.updatedAt, n.id)
 
-    fun delete(id: Long) {
-        db.noteQueries.delete(id)
-    }
+    fun delete(id: Long) = db.noteQueries.delete(id)
 }

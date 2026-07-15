@@ -1,3 +1,5 @@
+package ui.theme
+
 import androidx.compose.ui.graphics.Color
 
 /** Quiet Ink 디자인 시스템 색 토큰 (DESIGN.md 기준). */

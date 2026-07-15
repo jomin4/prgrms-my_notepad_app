@@ -10,6 +10,7 @@ tags: [changelog]
 - 날짜별 작업 내역. 최신이 위. (날짜 / 무엇을 / 왜 / 결과)
 
 ## 2026-07-15
+- **모듈 리팩터링 — 레이어 분리(가독성)**: 평면 파일 구조를 **패키지(`ui`/`ai`/`domain`/`data`)** 로 분리. AI 로직을 UI에서 추출: `ChatEngine`(오케스트레이션)·`Prompt`(대상 노트 명시)·`AiTool`+`ToolRegistry`(도구를 한 곳에서 정의·선택·실행). AI 패널 헤더에 **"대상: {노트}"** 표시로 AI가 보는 대상을 시각화. 동작 동일(리팩터링), 실행 검증 완료.
 - **아키텍처 결정(ADR-001)**: 확장을 위해 LangGraph/MCP 검토 → **지금은 미도입** 결정(in-app Kotlin 도구 유지). LangGraph는 Python/JS라 데스크톱 번들 부담·정체성 충돌, 도구 2개엔 오버스펙. 재검토 트리거(도구 3~4개+ → Kotlin MCP / 멀티에이전트 → JVM 오케스트레이션) 기록. → `wiki/03-development/decisions/adr-001-ai-tool-management.md`.
 - **개발 M2.3 — 텍스트 작성 도구(tool calling) + ai-mark · M2 완료**: NIM 도구 호출 처리(`chatTools`/`noteTools` — append_note·rewrite_note). AI가 "노트에 정리/추가" 요청 시 도구를 호출해 **본문을 직접 수정**하고, 쓴 범위를 **보라 하이라이트(ai-mark)** 로 표시(`aiMarkTransform`). AI 패널에 "노트에 작성함" teal 칩. 사용자가 본문 편집하면 마크 해제. → **M2 완료(AI가 노트에 직접 쓰기)**.
 - **M2.2 수정 — 채팅 타임아웃 해결 + 모델 변경**: 채팅 POST가 `request timed out` → **HTTP/2 POST 멈춤** 이슈로 진단, `HttpClient`를 **HTTP/1.1**로 강제해 해결. 무료 티어에서 `llama-3.3-70b`가 62초~90초 타임아웃으로 사실상 불가 → **기본 모델을 `llama-3.1-8b`(0.5~0.7초)로 변경**, 설정에 "8b가 가장 빠름" 안내. (진단용 임시 코드로 원인 확정 후 제거)

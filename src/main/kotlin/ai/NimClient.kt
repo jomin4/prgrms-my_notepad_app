@@ -1,3 +1,5 @@
+package ai
+
 import org.json.JSONArray
 import org.json.JSONObject
 import java.net.URI
@@ -19,7 +21,7 @@ sealed interface ChatResult {
 /** 모델이 호출한 도구 1건. */
 data class ToolCall(val name: String, val args: JSONObject)
 
-/** NVIDIA NIM (OpenAI 호환) 클라이언트. M2.1은 연결 테스트만. */
+/** NVIDIA NIM(OpenAI 호환) 저수준 통신 계층. 오케스트레이션은 ChatEngine이 담당. */
 object NimClient {
     private const val BASE = "https://integrate.api.nvidia.com/v1"
 
@@ -28,7 +30,7 @@ object NimClient {
         .connectTimeout(Duration.ofSeconds(15))
         .build()
 
-    /** 키가 유효한지 /models 호출로 확인. (블로킹 — IO 스레드에서 호출할 것) */
+    /** 키가 유효한지 /models 로 확인. (블로킹) */
     fun testConnection(key: String): Result<String> {
         return try {
             val req = HttpRequest.newBuilder(URI.create("$BASE/models"))
@@ -45,52 +47,6 @@ object NimClient {
         } catch (e: Exception) {
             Result.failure(RuntimeException("네트워크 오류"))
         }
-    }
-
-    /** 대화 요청 → 모델의 답변 텍스트. (블로킹 — IO 스레드에서 호출할 것) */
-    fun chat(key: String, model: String, messages: List<ChatMsg>): Result<String> {
-        return try {
-            val payload = JSONObject()
-                .put("model", model)
-                .put("messages", JSONArray(messages.map { JSONObject().put("role", it.role).put("content", it.content) }))
-                .put("temperature", 0.5)
-                .put("max_tokens", 1024)
-            val req = HttpRequest.newBuilder(URI.create("$BASE/chat/completions"))
-                .header("Authorization", "Bearer $key")
-                .header("Content-Type", "application/json")
-                .header("Accept", "application/json")
-                .timeout(Duration.ofSeconds(90))
-                .POST(HttpRequest.BodyPublishers.ofString(payload.toString(), StandardCharsets.UTF_8))
-                .build()
-            val resp = client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8))
-            if (resp.statusCode() in 200..299) {
-                val content = JSONObject(resp.body())
-                    .getJSONArray("choices").getJSONObject(0)
-                    .getJSONObject("message").getString("content")
-                Result.success(content.trim())
-            } else {
-                Result.failure(RuntimeException("오류 (HTTP ${resp.statusCode()})"))
-            }
-        } catch (e: Exception) {
-            Result.failure(RuntimeException(e.message ?: "요청 실패"))
-        }
-    }
-
-    /** 노트 조작 도구 스키마 (1차: 텍스트). */
-    fun noteTools(): JSONArray {
-        fun tool(name: String, desc: String, propDesc: String): JSONObject =
-            JSONObject().put("type", "function").put(
-                "function",
-                JSONObject().put("name", name).put("description", desc).put(
-                    "parameters",
-                    JSONObject().put("type", "object")
-                        .put("properties", JSONObject().put("text", JSONObject().put("type", "string").put("description", propDesc)))
-                        .put("required", JSONArray().put("text")),
-                ),
-            )
-        return JSONArray()
-            .put(tool("append_note", "현재 노트 본문 끝에 텍스트를 이어 붙인다.", "추가할 텍스트(마크다운 허용)"))
-            .put(tool("rewrite_note", "현재 노트 본문 전체를 새 텍스트로 교체한다(요약·정리·개요 작성 등).", "새 본문 전체"))
     }
 
     /** 도구를 포함해 대화. 모델이 도구를 호출하면 ToolCalls, 아니면 Text. (블로킹) */

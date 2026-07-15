@@ -1,3 +1,5 @@
+package ui.settings
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -32,9 +34,12 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ai.NimClient
+import data.SecureStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import ui.theme.Ink
 import java.awt.Desktop
 import java.net.URI
 
@@ -53,7 +58,6 @@ fun Settings(c: Ink, onBack: () -> Unit) {
     val scope = rememberCoroutineScope()
 
     Column(Modifier.fillMaxSize().background(c.surface)) {
-        // 상단 바
         Row(Modifier.fillMaxWidth().background(c.soft).padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.clickable { onBack() }.padding(4.dp)) {
                 BasicText("←", style = TextStyle(color = c.body, fontSize = 18.sp))
@@ -64,10 +68,7 @@ fun Settings(c: Ink, onBack: () -> Unit) {
         Box(Modifier.height(0.5.dp).fillMaxWidth().background(c.line))
 
         Column(Modifier.fillMaxWidth().padding(horizontal = 26.dp, vertical = 22.dp).widthIn(max = 560.dp)) {
-            // ── AI 연결 그룹 ──
-            Column(
-                Modifier.fillMaxWidth().border(0.5.dp, c.line, RoundedCornerShape(12.dp)).padding(18.dp),
-            ) {
+            Column(Modifier.fillMaxWidth().border(0.5.dp, c.line, RoundedCornerShape(12.dp)).padding(18.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     BasicText("AI 연결", style = TextStyle(color = c.ink, fontSize = 14.sp, fontWeight = FontWeight.Medium))
                     Spacer(Modifier.width(8.dp))
@@ -84,16 +85,12 @@ fun Settings(c: Ink, onBack: () -> Unit) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(Modifier.weight(1f)) {
-                        if (keyInput.isEmpty()) {
-                            BasicText("nvapi-…", style = TextStyle(color = c.faint, fontFamily = FontFamily.Monospace, fontSize = 13.sp))
-                        }
+                        if (keyInput.isEmpty()) BasicText("nvapi-…", style = TextStyle(color = c.faint, fontFamily = FontFamily.Monospace, fontSize = 13.sp))
                         BasicTextField(
-                            value = keyInput,
-                            onValueChange = { keyInput = it; status = null },
+                            value = keyInput, onValueChange = { keyInput = it; status = null },
                             textStyle = TextStyle(color = c.ink, fontFamily = FontFamily.Monospace, fontSize = 13.sp),
                             visualTransformation = if (showKey) VisualTransformation.None else PasswordVisualTransformation(),
-                            cursorBrush = SolidColor(c.primary),
-                            modifier = Modifier.fillMaxWidth(),
+                            cursorBrush = SolidColor(c.primary), modifier = Modifier.fillMaxWidth(),
                         )
                     }
                     Spacer(Modifier.width(8.dp))
@@ -118,10 +115,7 @@ fun Settings(c: Ink, onBack: () -> Unit) {
                 MODELS.forEach { m ->
                     val sel = m == model
                     Row(
-                        Modifier.fillMaxWidth().padding(vertical = 2.dp)
-                            .background(if (sel) c.inset else Color.Transparent, RoundedCornerShape(8.dp))
-                            .clickable { model = m }
-                            .padding(horizontal = 11.dp, vertical = 9.dp),
+                        Modifier.fillMaxWidth().padding(vertical = 2.dp).background(if (sel) c.inset else Color.Transparent, RoundedCornerShape(8.dp)).clickable { model = m }.padding(horizontal = 11.dp, vertical = 9.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Box(Modifier.width(9.dp).height(9.dp).background(if (sel) c.primary else Color.Transparent, RoundedCornerShape(999.dp)).border(0.5.dp, if (sel) c.primary else c.line2, RoundedCornerShape(999.dp)))
@@ -133,19 +127,17 @@ fun Settings(c: Ink, onBack: () -> Unit) {
                 Spacer(Modifier.height(16.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
-                        Modifier.background(c.surface, RoundedCornerShape(8.dp)).border(0.5.dp, c.line2, RoundedCornerShape(8.dp))
-                            .clickable {
-                                if (keyInput.isBlank()) {
-                                    status = "키를 먼저 입력하세요" to c.muted
-                                } else {
-                                    status = "테스트 중…" to c.muted
-                                    scope.launch {
-                                        val r = withContext(Dispatchers.IO) { NimClient.testConnection(keyInput) }
-                                        status = r.fold({ "● $it" to c.primary }, { (it.message ?: "실패") to Color(0xFFD64545) })
-                                    }
+                        Modifier.background(c.surface, RoundedCornerShape(8.dp)).border(0.5.dp, c.line2, RoundedCornerShape(8.dp)).clickable {
+                            if (keyInput.isBlank()) {
+                                status = "키를 먼저 입력하세요" to c.muted
+                            } else {
+                                status = "테스트 중…" to c.muted
+                                scope.launch {
+                                    val r = withContext(Dispatchers.IO) { NimClient.testConnection(keyInput) }
+                                    status = r.fold({ "● $it" to c.primary }, { (it.message ?: "실패") to Color(0xFFD64545) })
                                 }
                             }
-                            .padding(horizontal = 14.dp, vertical = 8.dp),
+                        }.padding(horizontal = 14.dp, vertical = 8.dp),
                     ) {
                         BasicText("연결 테스트", style = TextStyle(color = c.ink, fontSize = 12.5.sp, fontWeight = FontWeight.Medium))
                     }
@@ -159,17 +151,15 @@ fun Settings(c: Ink, onBack: () -> Unit) {
             Spacer(Modifier.height(18.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 Box(
-                    Modifier.background(c.primary, RoundedCornerShape(8.dp))
-                        .clickable {
-                            try {
-                                if (keyInput.isNotBlank()) SecureStore.saveKey(keyInput.trim())
-                                SecureStore.saveModel(model)
-                                onBack()
-                            } catch (e: Exception) {
-                                status = "저장 실패: ${e.message}" to Color(0xFFD64545)
-                            }
+                    Modifier.background(c.primary, RoundedCornerShape(8.dp)).clickable {
+                        try {
+                            if (keyInput.isNotBlank()) SecureStore.saveKey(keyInput.trim())
+                            SecureStore.saveModel(model)
+                            onBack()
+                        } catch (e: Exception) {
+                            status = "저장 실패: ${e.message}" to Color(0xFFD64545)
                         }
-                        .padding(horizontal = 22.dp, vertical = 9.dp),
+                    }.padding(horizontal = 22.dp, vertical = 9.dp),
                 ) {
                     BasicText("저장", style = TextStyle(color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium))
                 }

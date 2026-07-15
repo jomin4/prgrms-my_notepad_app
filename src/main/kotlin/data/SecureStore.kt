@@ -1,9 +1,11 @@
+package data
+
 import com.sun.jna.platform.win32.Crypt32Util
 import java.io.File
 import java.util.Properties
 
 /**
- * API 키를 Windows DPAPI로 암호화해 기기에 저장한다(현재 사용자 계정만 복호화 가능).
+ * API 키를 Windows DPAPI로 암호화해 기기에 저장(현재 사용자만 복호화 가능).
  * 모델명 등 비민감 설정은 평문 properties에 저장.
  */
 object SecureStore {
@@ -16,8 +18,7 @@ object SecureStore {
     fun hasKey(): Boolean = keyFile.exists()
 
     fun saveKey(key: String) {
-        val encrypted = Crypt32Util.cryptProtectData(key.toByteArray(Charsets.UTF_8))
-        keyFile.writeBytes(encrypted)
+        keyFile.writeBytes(Crypt32Util.cryptProtectData(key.toByteArray(Charsets.UTF_8)))
     }
 
     fun loadKey(): String? {

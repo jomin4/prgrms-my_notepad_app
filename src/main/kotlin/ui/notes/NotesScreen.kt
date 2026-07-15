@@ -1,7 +1,8 @@
+package ui.notes
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -38,28 +39,14 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import data.NotesRepo
+import domain.NoteItem
+import ui.ai.AiPanel
+import ui.theme.Ink
 
-/** 화면에서 편집 중인 노트 한 건. id는 DB 행 id. */
-class NoteItem(val id: Long, title: String, body: String, updatedAt: Long) {
-    var title by mutableStateOf(title)
-    var body by mutableStateOf(body)
-    var updatedAt by mutableStateOf(updatedAt)
-    val aiRanges = mutableStateListOf<Pair<Int, Int>>()
-    fun touch() { updatedAt = System.currentTimeMillis() }
-}
-
+/** 노트 화면: 좌측 목록 + 중앙 편집기 + 우측 AI 패널. */
 @Composable
-fun App() {
-    val c = if (isSystemInDarkTheme()) DarkInk else LightInk
-    var screen by remember { mutableStateOf(if (SecureStore.hasKey()) "notes" else "settings") }
-    when (screen) {
-        "settings" -> Settings(c, onBack = { screen = "notes" })
-        else -> NotesScreen(c, onOpenSettings = { screen = "settings" })
-    }
-}
-
-@Composable
-private fun NotesScreen(c: Ink, onOpenSettings: () -> Unit) {
+fun NotesScreen(c: Ink, onOpenSettings: () -> Unit) {
     val repo = remember { NotesRepo() }
     val notes = remember {
         mutableStateListOf<NoteItem>().also { list ->
@@ -94,25 +81,17 @@ private fun NotesScreen(c: Ink, onOpenSettings: () -> Unit) {
         )
         Box(Modifier.weight(1f).fillMaxHeight().background(c.surface)) {
             if (selected != null) {
-                Editor(
-                    c = c, note = selected,
-                    onEdit = { repo.update(it) },
-                    onDelete = {
-                        repo.delete(selected.id)
-                        notes.remove(selected)
-                        selectedId = notes.firstOrNull()?.id
-                    },
-                )
+                Editor(c, selected, onEdit = { repo.update(it) }, onDelete = {
+                    repo.delete(selected.id)
+                    notes.remove(selected)
+                    selectedId = notes.firstOrNull()?.id
+                })
             } else {
-                BasicText(
-                    "노트를 선택하거나 새로 만드세요",
-                    modifier = Modifier.align(Alignment.Center),
-                    style = TextStyle(color = c.faint, fontSize = 14.sp),
-                )
+                BasicText("노트를 선택하거나 새로 만드세요", modifier = Modifier.align(Alignment.Center), style = TextStyle(color = c.faint, fontSize = 14.sp))
             }
         }
         Box(Modifier.width(0.5.dp).fillMaxHeight().background(c.line))
-        AiPanel(c = c, note = selected, onEdit = { repo.update(it) }, onOpenSettings = onOpenSettings)
+        AiPanel(c = c, targetNote = selected, onEdit = { repo.update(it) }, onOpenSettings = onOpenSettings)
     }
 }
 
@@ -125,27 +104,14 @@ private fun Sidebar(
     Column(Modifier.width(240.dp).fillMaxHeight().background(c.soft)) {
         Column(Modifier.padding(12.dp)) {
             Box(
-                Modifier.fillMaxWidth()
-                    .background(c.inset, RoundedCornerShape(8.dp))
-                    .border(0.5.dp, c.line, RoundedCornerShape(8.dp))
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                Modifier.fillMaxWidth().background(c.inset, RoundedCornerShape(8.dp)).border(0.5.dp, c.line, RoundedCornerShape(8.dp)).padding(horizontal = 10.dp, vertical = 8.dp),
             ) {
-                if (query.isEmpty()) {
-                    BasicText("검색", style = TextStyle(color = c.faint, fontSize = 13.sp))
-                }
-                BasicTextField(
-                    value = query, onValueChange = onQuery,
-                    textStyle = TextStyle(color = c.ink, fontSize = 13.sp),
-                    cursorBrush = SolidColor(c.primary),
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                if (query.isEmpty()) BasicText("검색", style = TextStyle(color = c.faint, fontSize = 13.sp))
+                BasicTextField(query, onQuery, textStyle = TextStyle(color = c.ink, fontSize = 13.sp), cursorBrush = SolidColor(c.primary), modifier = Modifier.fillMaxWidth())
             }
             Spacer(Modifier.height(8.dp))
             Box(
-                Modifier.fillMaxWidth()
-                    .background(c.primary, RoundedCornerShape(8.dp))
-                    .clickable { onNew() }
-                    .padding(vertical = 9.dp),
+                Modifier.fillMaxWidth().background(c.primary, RoundedCornerShape(8.dp)).clickable { onNew() }.padding(vertical = 9.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 BasicText("+ 새 노트", style = TextStyle(color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium))
@@ -154,11 +120,7 @@ private fun Sidebar(
         LazyColumn(Modifier.weight(1f)) {
             items(notes, key = { it.id }) { note ->
                 val sel = note.id == selectedId
-                Row(
-                    Modifier.fillMaxWidth()
-                        .clickable { onSelect(note.id) }
-                        .background(if (sel) c.surface else Color.Transparent),
-                ) {
+                Row(Modifier.fillMaxWidth().clickable { onSelect(note.id) }.background(if (sel) c.surface else Color.Transparent)) {
                     Box(Modifier.width(2.dp).fillMaxHeight().background(if (sel) c.line2 else Color.Transparent))
                     Column(Modifier.padding(horizontal = 12.dp, vertical = 9.dp)) {
                         BasicText(
@@ -168,20 +130,14 @@ private fun Sidebar(
                         )
                         val sub = note.body.lineSequence().firstOrNull { it.isNotBlank() }.orEmpty()
                         if (sub.isNotBlank()) {
-                            BasicText(
-                                sub, style = TextStyle(color = c.faint, fontSize = 12.sp),
-                                maxLines = 1, overflow = TextOverflow.Ellipsis,
-                            )
+                            BasicText(sub, style = TextStyle(color = c.faint, fontSize = 12.sp), maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
                 }
             }
         }
         Box(Modifier.height(0.5.dp).fillMaxWidth().background(c.line))
-        Row(
-            Modifier.fillMaxWidth().clickable { onOpenSettings() }.padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        Row(Modifier.fillMaxWidth().clickable { onOpenSettings() }.padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             BasicText("설정", style = TextStyle(color = c.body, fontSize = 13.sp))
         }
     }
@@ -227,7 +183,7 @@ private fun Editor(c: Ink, note: NoteItem, onEdit: (NoteItem) -> Unit, onDelete:
     }
 }
 
-/** AI가 쓴 범위를 보라(primary-soft) 하이라이트로 표시하는 시각 변환. 텍스트는 그대로 두고 색만 입힌다. */
+/** AI가 쓴 범위를 보라(primary-soft) 하이라이트로 표시. 텍스트는 그대로, 색만 입힌다. */
 private fun aiMarkTransform(c: Ink, ranges: List<Pair<Int, Int>>): VisualTransformation =
     VisualTransformation { text ->
         val styled = buildAnnotatedString {

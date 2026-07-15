@@ -35,6 +35,18 @@ tags: [architecture, nim, mvvm]
 - API 키는 SecureStore에서만 읽어 요청 시점에 헤더로 사용. 로그·화면·커밋·크래시 리포트에 노출 금지.
 - 노트 본문이 요청에 포함되어 NIM으로 전송됨(사용자에게 명확히 고지).
 
+## 모듈 구조 (구현 · 패키지)
+레이어를 패키지로 분리해 "AI가 보는 노트"와 "도구 선택"을 코드에서 드러냈다.
+```
+ui/      화면(Compose) — App(라우터) · notes(목록·편집기·ai-mark) · ai(패널) · settings · theme
+ai/      LLM 오케스트레이션 — ChatEngine(대화 흐름) · Prompt(대상 노트 명시) · NimClient(통신)
+domain/  핵심 모델·도구 — NoteItem · AiTool · ToolRegistry · tools/(append_note·rewrite_note)
+data/    저장 — NotesRepo(SQLite) · SecureStore(DPAPI)
+```
+- **대상 노트 명시**: `ToolContext(targetNote)` + `Prompt.system(targetNote)`, AI 패널 헤더에 "대상: {노트}" 표시.
+- **도구는 한 곳에서**: `AiTool` 인터페이스 + `ToolRegistry`(정의·스키마·선택·실행). 새 도구는 registry에 추가만.
+- 확장 시: registry가 곧 [ADR-001](../03-development/decisions/adr-001-ai-tool-management.md)의 MCP 이전 지점.
+
 ## 다음
 - [데이터 모델](data-model.md) · [도구 스키마](tools-spec.md).
 - 03 개발: 이 설계대로 M1(노트 CRUD)부터 구현.
