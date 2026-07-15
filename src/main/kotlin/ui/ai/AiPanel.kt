@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -43,18 +44,19 @@ import ai.ChatEngine
 import ai.ChatMsg
 import data.SecureStore
 import domain.NoteItem
+import domain.ToolCatalog
 import domain.ToolRegistry
 import kotlinx.coroutines.launch
 import ui.theme.Ink
 
-/** 패널에 표시할 메시지. tool != null이면 도구 실행 칩을 함께 보여준다. */
 private data class UiMsg(val role: String, val content: String, val tool: String? = null)
 
 @Composable
-fun AiPanel(c: Ink, targetNote: NoteItem?, onEdit: (NoteItem) -> Unit, onOpenSettings: () -> Unit) {
+fun AiPanel(c: Ink, targetNote: NoteItem?, onEdit: (NoteItem) -> Unit, onOpenSettings: () -> Unit, onClose: () -> Unit) {
     val key = remember { SecureStore.loadKey() }
-    val model = remember { SecureStore.loadModel() }
-    val engine = remember { ChatEngine(ToolRegistry.default()) }
+    val engine = remember { ChatEngine() }
+    var model by remember { mutableStateOf(SecureStore.loadModel()) }
+    var modelMenu by remember { mutableStateOf(false) }
     val messages = remember { mutableStateListOf<UiMsg>() }
     var input by remember { mutableStateOf("") }
     var sending by remember { mutableStateOf(false) }
@@ -65,25 +67,41 @@ fun AiPanel(c: Ink, targetNote: NoteItem?, onEdit: (NoteItem) -> Unit, onOpenSet
         if (messages.size > 0) listState.animateScrollToItem(messages.size)
     }
 
-    Column(Modifier.width(320.dp).fillMaxHeight().background(c.soft)) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 13.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
+    Column(Modifier.fillMaxSize().background(c.surface)) {
+        // 헤더: AI · 모델(전환) · 닫기
+        Row(Modifier.fillMaxWidth().padding(horizontal = 13.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(24.dp).background(c.primarySoft, RoundedCornerShape(7.dp)), contentAlignment = Alignment.Center) {
                 BasicText("✦", style = TextStyle(color = c.primary, fontSize = 13.sp))
             }
             Spacer(Modifier.width(8.dp))
             Column(Modifier.weight(1f)) {
                 BasicText("AI", style = TextStyle(color = c.ink, fontSize = 13.sp, fontWeight = FontWeight.Medium))
-                BasicText(model.substringAfterLast('/'), style = TextStyle(color = c.faint, fontFamily = FontFamily.Monospace, fontSize = 10.sp))
+                Row(Modifier.clickable { modelMenu = !modelMenu }, verticalAlignment = Alignment.CenterVertically) {
+                    BasicText(model.substringAfterLast('/'), style = TextStyle(color = c.muted, fontFamily = FontFamily.Monospace, fontSize = 10.sp))
+                    BasicText(" ⌄", style = TextStyle(color = c.faint, fontSize = 10.sp))
+                }
+            }
+            Box(Modifier.clickable { onClose() }.padding(4.dp)) {
+                BasicText("✕", style = TextStyle(color = c.muted, fontSize = 15.sp))
             }
         }
-        // 대상 노트 명시 — AI가 무엇을 보고/쓰는지 항상 드러낸다.
+        if (modelMenu) {
+            Column(Modifier.fillMaxWidth().background(c.soft).padding(vertical = 4.dp)) {
+                SecureStore.MODELS.forEach { m ->
+                    Row(
+                        Modifier.fillMaxWidth().clickable { model = m; SecureStore.saveModel(m); modelMenu = false }.padding(horizontal = 15.dp, vertical = 7.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        BasicText(if (m == model) "● " else "○ ", style = TextStyle(color = if (m == model) c.primary else c.faint, fontSize = 11.sp))
+                        BasicText(m.substringAfterLast('/'), style = TextStyle(color = c.body, fontFamily = FontFamily.Monospace, fontSize = 11.5.sp))
+                    }
+                }
+            }
+        }
+        // 대상 노트 명시
         Row(Modifier.fillMaxWidth().background(c.inset).padding(horizontal = 13.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
             BasicText("대상  ", style = TextStyle(color = c.faint, fontSize = 11.sp))
-            BasicText(
-                targetNote?.title?.ifBlank { "제목 없음" } ?: "노트 없음",
-                style = TextStyle(color = c.body, fontSize = 11.5.sp, fontWeight = FontWeight.Medium),
-                maxLines = 1, overflow = TextOverflow.Ellipsis,
-            )
+            BasicText(targetNote?.title?.ifBlank { "제목 없음" } ?: "노트 없음", style = TextStyle(color = c.body, fontSize = 11.5.sp, fontWeight = FontWeight.Medium), maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         Box(Modifier.height(0.5.dp).fillMaxWidth().background(c.line))
 
@@ -124,7 +142,8 @@ fun AiPanel(c: Ink, targetNote: NoteItem?, onEdit: (NoteItem) -> Unit, onOpenSet
                             sending = true
                             scope.launch {
                                 val history = messages.map { ChatMsg(it.role, it.content) }
-                                val outcome = engine.send(key, model, note, history)
+                                val registry = ToolRegistry(ToolCatalog.all().filter { SecureStore.isToolEnabled(it.name) })
+                                val outcome = engine.send(key, model, note, history, registry)
                                 sending = false
                                 when (outcome) {
                                     is ChatEngine.Outcome.Reply -> messages.add(UiMsg("assistant", outcome.text))
@@ -150,17 +169,12 @@ fun AiPanel(c: Ink, targetNote: NoteItem?, onEdit: (NoteItem) -> Unit, onOpenSet
 private fun Bubble(c: Ink, m: UiMsg) {
     val user = m.role == "user"
     Column(Modifier.fillMaxWidth(), horizontalAlignment = if (user) Alignment.End else Alignment.Start) {
-        Box(
-            Modifier.widthIn(max = 244.dp).background(if (user) c.primary else Color.Transparent, RoundedCornerShape(12.dp)).padding(horizontal = if (user) 11.dp else 0.dp, vertical = if (user) 8.dp else 0.dp),
-        ) {
+        Box(Modifier.widthIn(max = 244.dp).background(if (user) c.primary else Color.Transparent, RoundedCornerShape(12.dp)).padding(horizontal = if (user) 11.dp else 0.dp, vertical = if (user) 8.dp else 0.dp)) {
             BasicText(m.content, style = TextStyle(color = if (user) Color.White else c.ink, fontSize = 12.5.sp, lineHeight = 18.sp))
         }
         if (m.tool != null) {
             Spacer(Modifier.height(6.dp))
-            Row(
-                Modifier.background(c.localSoft, RoundedCornerShape(7.dp)).border(0.5.dp, c.local, RoundedCornerShape(7.dp)).padding(horizontal = 9.dp, vertical = 5.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            Row(Modifier.background(c.localSoft, RoundedCornerShape(7.dp)).border(0.5.dp, c.local, RoundedCornerShape(7.dp)).padding(horizontal = 9.dp, vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
                 BasicText("✎ ${m.tool}", style = TextStyle(color = c.localInk, fontSize = 10.5.sp, fontWeight = FontWeight.Medium))
             }
         }

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,6 +20,7 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -36,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ai.NimClient
 import data.SecureStore
+import domain.ToolCatalog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -43,18 +46,15 @@ import ui.theme.Ink
 import java.awt.Desktop
 import java.net.URI
 
-private val MODELS = listOf(
-    "meta/llama-3.1-8b-instruct",
-    "meta/llama-3.3-70b-instruct",
-    "meta/llama-3.1-70b-instruct",
-)
-
 @Composable
 fun Settings(c: Ink, onBack: () -> Unit) {
     var keyInput by remember { mutableStateOf(SecureStore.loadKey() ?: "") }
     var showKey by remember { mutableStateOf(false) }
     var model by remember { mutableStateOf(SecureStore.loadModel()) }
     var status by remember { mutableStateOf<Pair<String, Color>?>(null) }
+    val toolStates = remember {
+        mutableStateMapOf<String, Boolean>().apply { ToolCatalog.all().forEach { put(it.name, SecureStore.isToolEnabled(it.name)) } }
+    }
     val scope = rememberCoroutineScope()
 
     Column(Modifier.fillMaxSize().background(c.surface)) {
@@ -112,7 +112,7 @@ fun Settings(c: Ink, onBack: () -> Unit) {
                 Spacer(Modifier.height(3.dp))
                 BasicText("8b가 무료 티어에서 가장 빠릅니다", style = TextStyle(color = c.faint, fontSize = 11.sp))
                 Spacer(Modifier.height(6.dp))
-                MODELS.forEach { m ->
+                SecureStore.MODELS.forEach { m ->
                     val sel = m == model
                     Row(
                         Modifier.fillMaxWidth().padding(vertical = 2.dp).background(if (sel) c.inset else Color.Transparent, RoundedCornerShape(8.dp)).clickable { model = m }.padding(horizontal = 11.dp, vertical = 9.dp),
@@ -144,6 +144,34 @@ fun Settings(c: Ink, onBack: () -> Unit) {
                     Spacer(Modifier.width(12.dp))
                     status?.let { (msg, col) ->
                         BasicText(msg, style = TextStyle(color = col, fontSize = 12.sp, fontWeight = FontWeight.Medium))
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+            Column(Modifier.fillMaxWidth().border(0.5.dp, c.line, RoundedCornerShape(12.dp)).padding(18.dp)) {
+                BasicText("도구", style = TextStyle(color = c.ink, fontSize = 14.sp, fontWeight = FontWeight.Medium))
+                Spacer(Modifier.height(3.dp))
+                BasicText("AI가 노트에 쓸 때 사용할 수 있는 도구를 켜고 끕니다.", style = TextStyle(color = c.faint, fontSize = 11.sp))
+                Spacer(Modifier.height(8.dp))
+                ToolCatalog.all().forEach { tool ->
+                    val on = toolStates[tool.name] ?: true
+                    Row(Modifier.fillMaxWidth().padding(vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            BasicText(tool.name, style = TextStyle(color = c.ink, fontFamily = FontFamily.Monospace, fontSize = 12.5.sp, fontWeight = FontWeight.Medium))
+                            BasicText(tool.description, style = TextStyle(color = c.faint, fontSize = 11.sp))
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        Box(
+                            Modifier.width(36.dp).height(20.dp).background(if (on) c.primary else c.line2, RoundedCornerShape(999.dp)).clickable {
+                                val next = !on
+                                toolStates[tool.name] = next
+                                SecureStore.setToolEnabled(tool.name, next)
+                            }.padding(2.dp),
+                            contentAlignment = if (on) Alignment.CenterEnd else Alignment.CenterStart,
+                        ) {
+                            Box(Modifier.size(16.dp).background(Color.White, RoundedCornerShape(999.dp)))
+                        }
                     }
                 }
             }
