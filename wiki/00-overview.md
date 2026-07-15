@@ -34,5 +34,7 @@ tags: [overview]
 - [x] 개발 M1.1 — KMP/Compose 스캐폴드 + 첫 실행 창
 - [x] 개발 M1.2 — 노트 UI(목록·편집기·검색·삭제, Quiet Ink)
 - [x] 개발 M1.3 — 로컬 저장(SQLDelight) · **M1 완료**
-- [ ] 개발 M2 — NVIDIA NIM 연결(설정 API 키 → AI 채팅 → 텍스트 도구) ← 다음
+- [x] 개발 M2.1 — 설정 페이지 + API 키 암호화 저장(DPAPI) + 연결 테스트
+- [ ] 개발 M2.2 — AI 도우미 패널(NIM 채팅) ← 다음
+- [ ] 개발 M2.3 — 텍스트 작성 도구(tool calling) + ai-mark
 - 상세: [진행 로그](_meta/changelog.md)

@@ -45,6 +45,15 @@ class NoteItem(val id: Long, title: String, body: String, updatedAt: Long) {
 @Composable
 fun App() {
     val c = if (isSystemInDarkTheme()) DarkInk else LightInk
+    var screen by remember { mutableStateOf(if (SecureStore.hasKey()) "notes" else "settings") }
+    when (screen) {
+        "settings" -> Settings(c, onBack = { screen = "notes" })
+        else -> NotesScreen(c, onOpenSettings = { screen = "settings" })
+    }
+}
+
+@Composable
+private fun NotesScreen(c: Ink, onOpenSettings: () -> Unit) {
     val repo = remember { NotesRepo() }
     val notes = remember {
         mutableStateListOf<NoteItem>().also { list ->
@@ -67,6 +76,7 @@ fun App() {
     Row(Modifier.fillMaxSize().background(c.canvas)) {
         Sidebar(
             c = c, notes = filtered, selectedId = selectedId, query = query,
+            onOpenSettings = onOpenSettings,
             onQuery = { query = it },
             onSelect = { selectedId = it },
             onNew = {
@@ -101,6 +111,7 @@ fun App() {
 @Composable
 private fun Sidebar(
     c: Ink, notes: List<NoteItem>, selectedId: Long?, query: String,
+    onOpenSettings: () -> Unit,
     onQuery: (String) -> Unit, onSelect: (Long) -> Unit, onNew: () -> Unit,
 ) {
     Column(Modifier.width(240.dp).fillMaxHeight().background(c.soft)) {
@@ -157,6 +168,13 @@ private fun Sidebar(
                     }
                 }
             }
+        }
+        Box(Modifier.height(0.5.dp).fillMaxWidth().background(c.line))
+        Row(
+            Modifier.fillMaxWidth().clickable { onOpenSettings() }.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            BasicText("설정", style = TextStyle(color = c.body, fontSize = 13.sp))
         }
     }
 }

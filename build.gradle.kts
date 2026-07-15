@@ -28,6 +28,7 @@ dependencies {
     implementation(compose.desktop.currentOs)
     implementation(compose.material3)
     implementation("app.cash.sqldelight:sqlite-driver:2.3.2")
+    implementation("net.java.dev.jna:jna-platform:5.19.1")
 }
 
 sqldelight {
