@@ -1,18 +1,12 @@
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import androidx.compose.ui.window.rememberWindowState
 
 fun main() = application {
-    Window(onCloseRequest = ::exitApplication, title = "로컬 노트") {
-        MaterialTheme {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("로컬 AI 노트 — 첫 실행 OK")
-            }
-        }
+    val state = rememberWindowState(size = DpSize(1040.dp, 680.dp))
+    Window(onCloseRequest = ::exitApplication, state = state, title = "로컬 노트") {
+        App()
     }
 }
