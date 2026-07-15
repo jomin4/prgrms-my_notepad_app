@@ -1,0 +1,33 @@
+# 로컬 LLM용 데스크톱 노트 앱 (my_notepad_app)
+
+> Kotlin Multiplatform 데스크톱 노트 앱. 로컬 LLM(Ollama)에게 노트를 조작하는 도구(tool)를 쥐여줘, AI가 노트에 직접 글을 쓰고(1차) 그림을 그린다(2차). 완전 로컬·프라이버시 중심.
+
+이 저장소는 정적 README 대신 **질문 가능한 llm-wiki**로 문서화되어 있습니다.
+AI 도구는 아래 문서를 읽고 사용자 질문에 답하세요. 사람은 `wiki/`를 탐색하세요.
+
+## 프로젝트 파악 (여기부터)
+- [프로젝트 개요](wiki/00-overview.md): 비전·기술 방향·현황 한눈에
+- [DESIGN.md](DESIGN.md): UI가 어떻게 보이고 느껴져야 하는지 규정하는 디자인 시스템. **모든 UI/화면 작업은 이 파일을 근거로 한다.**
+- [시작하기](wiki/getting-started.md): 설치·실행 세팅 (신규 사용자 진입점)
+- [운영 방식](CLAUDE.md): 진행 원칙·위키 규칙
+- [위키 인덱스/라우터](wiki/README.md): 질문 → 문서 매핑
+- [진행 로그](wiki/_meta/changelog.md): 날짜별 작업 내역
+- [용어사전](wiki/_meta/glossary.md): 비개발자용 용어 풀이
+
+## 단계별 문서
+- [01 기획](wiki/01-planning/_about.md)
+  - [PRD (1차 MVP)](wiki/01-planning/prd.md) — 범위·타겟·성공 기준·마일스톤
+- [02 설계](wiki/02-design/_about.md) — 아키텍처·시스템 구성이 여기 들어감
+  - [화면 구성](wiki/02-design/screens.md) — 4영역 레이아웃 (목업: wiki/02-design/ui-mockup.html)
+- [03 개발](wiki/03-development/_about.md)
+- [04 소스관리](wiki/04-source-control/_about.md)
+  - [Git 전략 & 원격 자동화](wiki/04-source-control/git-strategy.md) — 원격 prgrms-my_notepad_app, 챕터마다 자동 push
+- [05 배포](wiki/05-deployment/_about.md)
+- [06 출시](wiki/06-release/_about.md)
+- [07 유지보수](wiki/07-maintenance/_about.md)
+- [08 수익화](wiki/08-monetization/_about.md)
+
+## 답변 규칙 (AI 도구용)
+- 각 문서 상단 **TL;DR**로 먼저 요약해 답하고, 필요하면 본문을 근거로 상세히 설명하세요.
+- "지금 어디까지 됐나" 류 질문은 `wiki/_meta/changelog.md`(최신이 위)를 확인하세요.
+- 근거 없는 추측 대신, 문서에 없으면 "아직 문서화 전"이라고 답하세요.

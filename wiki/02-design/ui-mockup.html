@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>로컬 AI 노트 — 프로덕션 화면 (Quiet Ink · v2)</title>
+<style>
+  :root{
+    --canvas:#f6f6f4;--surface:#fff;--soft:#f1f1ee;--inset:#ecebe7;
+    --ink:#1a1a1e;--body:#3a3a40;--muted:#6f6e75;--faint:#a3a2a9;
+    --line:#e7e6e2;--line2:#d9d8d3;
+    --primary:#5b4bd6;--primary-h:#4d3ec2;--primary-soft:#ecebfb;
+    --local:#0e9e77;--local-soft:#e2f4ee;--local-ink:#0b6e54;
+    --sans:"Inter",-apple-system,"Segoe UI",Roboto,sans-serif;
+    --serif:"Source Serif 4","Iowan Old Style",Georgia,serif;
+    --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --canvas:#151418;--surface:#1d1c22;--soft:#212028;--inset:#26252e;
+    --ink:#edecf0;--body:#c8c7ce;--muted:#918f99;--faint:#6a6872;
+    --line:#2b2a33;--line2:#3a3944;
+    --primary:#8f82f2;--primary-h:#a099f5;--primary-soft:#272348;
+    --local:#41c69c;--local-soft:#12332a;--local-ink:#7fdcc0;
+  }}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--canvas);color:var(--ink);font-family:var(--sans);
+    font-size:13px;line-height:1.5;min-height:100vh;display:grid;place-items:center;padding:32px}
+  .ic{width:16px;height:16px;stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round;flex:none}
+  .win{width:100%;max-width:1120px;background:var(--surface);border:1px solid var(--line2);
+    border-radius:14px;overflow:hidden;box-shadow:0 24px 60px -30px rgba(20,18,40,.5)}
+  .tb{display:flex;align-items:center;gap:12px;height:50px;padding:0 16px;background:var(--soft);border-bottom:1px solid var(--line)}
+  .mk{width:23px;height:23px;border-radius:7px;background:var(--primary);color:#fff;display:grid;place-items:center}
+  .wm{font-weight:500;letter-spacing:-.01em}
+  .oll{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:12px;color:var(--muted);background:var(--surface);border:1px solid var(--line);padding:5px 11px;border-radius:8px}
+  .live{width:7px;height:7px;border-radius:50%;background:var(--local)}
+  .wc{margin-left:auto;display:flex;gap:4px;color:var(--faint)}
+  .wc span{width:28px;height:26px;display:grid;place-items:center;border-radius:6px}
+  .wc span:hover{background:var(--inset)}
+  .grid{display:grid;grid-template-columns:240px minmax(0,1fr) 300px;height:560px}
+  .side{background:var(--soft);border-right:1px solid var(--line);display:flex;flex-direction:column}
+  .sh{padding:14px;display:flex;flex-direction:column;gap:9px}
+  .sr{display:flex;align-items:center;gap:8px;background:var(--inset);border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--faint);font-size:12.5px}
+  .nb{display:flex;align-items:center;justify-content:center;gap:7px;background:var(--primary);color:#fff;border-radius:8px;padding:9px;font-size:13px;font-weight:500;cursor:pointer}
+  .nb:hover{background:var(--primary-h)}
+  .nl{overflow:auto}
+  .ni{padding:10px 16px;border-left:2px solid transparent;cursor:default}
+  .ni:hover{background:var(--surface)}
+  .ni .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ni .d{font-size:11px;color:var(--faint);margin-top:2px}
+  .ni.sel{background:var(--surface);border-left-color:var(--line2)}
+  .ni.sel .t{font-weight:500}
+  .ed{display:flex;flex-direction:column;background:var(--surface);min-width:0}
+  .eb{display:flex;align-items:center;gap:8px;padding:10px 18px;border-bottom:1px solid var(--line)}
+  .seg{margin-left:auto;display:flex;background:var(--soft);border-radius:9px;padding:3px;gap:2px}
+  .seg button{border:0;background:transparent;font-family:var(--sans);color:var(--muted);padding:6px 11px;border-radius:6px;display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:500;cursor:pointer}
+  .seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.05)}
+  .seg button.dim{color:var(--faint)}
+  .eby{padding:30px 40px;overflow:auto}
+  .et{font-family:var(--serif);font-size:30px;font-weight:500;letter-spacing:-.01em;margin:0 0 4px}
+  .em{font-size:12px;color:var(--faint);margin-bottom:24px}
+  .ep{font-family:var(--serif);font-size:16px;line-height:1.8;color:var(--ink);margin:0 0 18px;max-width:60ch}
+  .aiblk{border-left:2px solid var(--primary);padding-left:16px;max-width:60ch}
+  .aiblk .cap{display:inline-flex;align-items:center;gap:5px;font-family:var(--sans);font-size:11px;font-weight:500;color:var(--primary);margin-bottom:7px}
+  .aiblk p{font-family:var(--serif);font-size:16px;line-height:1.75;margin:0 0 10px;color:var(--body)}
+  .hl{background:var(--primary-soft);border-radius:3px;padding:0 3px}
+  .ai{background:var(--soft);border-left:1px solid var(--line);display:flex;flex-direction:column;min-width:0}
+  .ah{display:flex;align-items:center;gap:9px;padding:13px 15px;border-bottom:1px solid var(--line)}
+  .ah .sp{width:26px;height:26px;border-radius:8px;background:var(--primary-soft);color:var(--primary);display:grid;place-items:center}
+  .ah .nm{font-weight:500;font-size:13px}
+  .ah .st{font-size:10.5px;color:var(--faint);font-family:var(--mono)}
+  .cv{flex:1;padding:15px;display:flex;flex-direction:column;gap:13px;overflow:auto}
+  .bu{align-self:flex-end;max-width:86%;background:var(--primary);color:#fff;padding:8px 12px;border-radius:14px 14px 4px 14px;font-size:12.5px;line-height:1.45}
+  .ba{align-self:flex-start;max-width:94%;font-size:12.5px;line-height:1.5;color:var(--ink)}
+  .chip{margin-top:8px;display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:500;padding:6px 10px;border-radius:7px;background:var(--local-soft);color:var(--local-ink);border:1px solid color-mix(in srgb,var(--local) 26%,transparent)}
+  .cp{padding:13px 15px;border-top:1px solid var(--line)}
+  .cpb{display:flex;align-items:center;gap:9px;background:var(--surface);border:1px solid var(--line2);border-radius:10px;padding:9px 11px}
+  .cpb .ph{flex:1;color:var(--faint);font-size:12.5px}
+  .snd{width:28px;height:28px;border-radius:7px;background:var(--primary);color:#fff;display:grid;place-items:center;flex:none;cursor:pointer}
+  .snd:hover{background:var(--primary-h)}
+  .sb{display:flex;align-items:center;gap:7px;padding:9px 17px;border-top:1px solid var(--line);background:var(--soft);font-size:12px;color:var(--local-ink)}
+  .sb .r{margin-left:auto;color:var(--faint);font-family:var(--mono);font-size:11.5px}
+</style>
+</head>
+<body>
+  <div class="win">
+    <div class="tb">
+      <span class="mk"><svg class="ic" viewBox="0 0 16 16" style="width:14px;height:14px;stroke:#fff"><path d="M4 3.5h8M4 8h8M4 12.5h5"/></svg></span>
+      <span class="wm">로컬 노트</span>
+      <span class="oll"><span class="live"></span> llama3.1 · 연결됨</span>
+      <span class="wc">
+        <span><svg class="ic" viewBox="0 0 16 16"><path d="M4 8h8"/></svg></span>
+        <span><svg class="ic" viewBox="0 0 16 16"><rect x="4" y="4" width="8" height="8" rx="1.5"/></svg></span>
+        <span><svg class="ic" viewBox="0 0 16 16"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7"/></svg></span>
+      </span>
+    </div>
+    <div class="grid">
+      <aside class="side">
+        <div class="sh">
+          <div class="sr"><svg class="ic" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg> 검색</div>
+          <div class="nb"><svg class="ic" viewBox="0 0 16 16" style="width:14px;height:14px;stroke:#fff"><path d="M8 3.5v9M3.5 8h9"/></svg> 새 노트</div>
+        </div>
+        <div class="nl">
+          <div class="ni sel"><div class="t">7월 팀 회의록</div><div class="d">오늘</div></div>
+          <div class="ni"><div class="t">앱 아이디어 메모</div><div class="d">어제</div></div>
+          <div class="ni"><div class="t">읽을 논문 목록</div><div class="d">7월 12일</div></div>
+          <div class="ni"><div class="t">주간 회고</div><div class="d">7월 9일</div></div>
+        </div>
+      </aside>
+      <main class="ed">
+        <div class="eb">
+          <div class="seg">
+            <button class="on"><svg class="ic" viewBox="0 0 16 16"><path d="M11 3l2 2-7 7-3 1 1-3z"/></svg> 노트</button>
+            <button class="dim"><svg class="ic" viewBox="0 0 16 16"><rect x="2.5" y="3" width="11" height="10" rx="1.5"/><path d="M2.5 6.5h11"/></svg> 캔버스</button>
+          </div>
+        </div>
+        <div class="eby">
+          <h1 class="et">7월 팀 회의록</h1>
+          <div class="em">2026년 7월 15일 · 자동 저장</div>
+          <p class="ep">1차 범위를 확정하는 회의였다. 편집기에 텍스트 도구를 먼저 붙이고, 그림은 뒤로 미룬다.</p>
+          <div class="aiblk">
+            <span class="cap"><svg class="ic" viewBox="0 0 16 16" style="width:13px;height:13px"><path d="M8 1.5l1.6 4.9 4.9 1.6-4.9 1.6L8 14.5l-1.6-4.9L1.5 8l4.9-1.6z"/></svg> AI 작성</span>
+            <p><span class="hl">모델이 노트에 직접 쓰고 고친다.</span> 모든 처리는 로컬에서, 데이터는 기기 밖으로 나가지 않는다.</p>
+          </div>
+        </div>
+      </main>
+      <aside class="ai">
+        <div class="ah">
+          <span class="sp"><svg class="ic" viewBox="0 0 16 16" style="width:14px;height:14px"><path d="M8 1.5l1.6 4.9 4.9 1.6-4.9 1.6L8 14.5l-1.6-4.9L1.5 8l4.9-1.6z"/></svg></span>
+          <div><div class="nm">AI</div><div class="st">on-device</div></div>
+        </div>
+        <div class="cv">
+          <div class="bu">회의 핵심만 정리해줘</div>
+          <div class="ba">노트에 정리해 넣었어요.<div class="chip"><svg class="ic" viewBox="0 0 16 16" style="width:13px;height:13px"><path d="M11 3l2 2-7 7-3 1 1-3z"/></svg> 노트에 작성함</div></div>
+        </div>
+        <div class="cp">
+          <div class="cpb"><span class="ph">물어보기</span><span class="snd"><svg class="ic" viewBox="0 0 16 16" style="width:14px;height:14px;stroke:#fff"><path d="M8 12.5V4M4.5 7.5L8 4l3.5 3.5"/></svg></span></div>
+        </div>
+      </aside>
+    </div>
+    <div class="sb">
+      <svg class="ic" viewBox="0 0 16 16" style="width:13px;height:13px"><rect x="3.5" y="7" width="9" height="6" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>
+      로컬 전용
+      <span class="r">저장됨</span>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,22 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Kotlin / Gradle (KMP 스캐폴드 이후)
+.gradle/
+build/
+local.properties
+*.hprof
+
+# 로그 / 환경
+*.log
+.env
+.env.*
+
+# 임시
+*.tmp
