@@ -27,9 +27,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -39,6 +44,7 @@ class NoteItem(val id: Long, title: String, body: String, updatedAt: Long) {
     var title by mutableStateOf(title)
     var body by mutableStateOf(body)
     var updatedAt by mutableStateOf(updatedAt)
+    val aiRanges = mutableStateListOf<Pair<Int, Int>>()
     fun touch() { updatedAt = System.currentTimeMillis() }
 }
 
@@ -106,7 +112,7 @@ private fun NotesScreen(c: Ink, onOpenSettings: () -> Unit) {
             }
         }
         Box(Modifier.width(0.5.dp).fillMaxHeight().background(c.line))
-        AiPanel(c, selected, onOpenSettings)
+        AiPanel(c = c, note = selected, onEdit = { repo.update(it) }, onOpenSettings = onOpenSettings)
     }
 }
 
@@ -183,6 +189,7 @@ private fun Sidebar(
 
 @Composable
 private fun Editor(c: Ink, note: NoteItem, onEdit: (NoteItem) -> Unit, onDelete: () -> Unit) {
+    val marks = note.aiRanges.toList()
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             Spacer(Modifier.weight(1f))
@@ -208,11 +215,29 @@ private fun Editor(c: Ink, note: NoteItem, onEdit: (NoteItem) -> Unit, onDelete:
                     BasicText("여기에 노트를 작성하세요…", style = TextStyle(color = c.faint, fontFamily = FontFamily.Serif, fontSize = 16.sp))
                 }
                 BasicTextField(
-                    value = note.body, onValueChange = { note.body = it; note.touch(); onEdit(note) },
+                    value = note.body,
+                    onValueChange = { note.body = it; note.touch(); if (note.aiRanges.isNotEmpty()) note.aiRanges.clear(); onEdit(note) },
                     textStyle = TextStyle(color = c.ink, fontFamily = FontFamily.Serif, fontSize = 16.sp, lineHeight = 26.sp),
-                    cursorBrush = SolidColor(c.primary), modifier = Modifier.fillMaxSize(),
+                    cursorBrush = SolidColor(c.primary),
+                    visualTransformation = aiMarkTransform(c, marks),
+                    modifier = Modifier.fillMaxSize(),
                 )
             }
         }
     }
 }
+
+/** AI가 쓴 범위를 보라(primary-soft) 하이라이트로 표시하는 시각 변환. 텍스트는 그대로 두고 색만 입힌다. */
+private fun aiMarkTransform(c: Ink, ranges: List<Pair<Int, Int>>): VisualTransformation =
+    VisualTransformation { text ->
+        val styled = buildAnnotatedString {
+            append(text.text)
+            val len = text.text.length
+            ranges.forEach { (s0, e0) ->
+                val s = s0.coerceIn(0, len)
+                val e = e0.coerceIn(s, len)
+                if (e > s) addStyle(SpanStyle(background = c.primarySoft), s, e)
+            }
+        }
+        TransformedText(styled, OffsetMapping.Identity)
+    }

@@ -40,19 +40,21 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+/** 패널에 표시할 메시지. tool != null이면 도구 실행 칩을 함께 보여준다. */
+private data class UiMsg(val role: String, val content: String, val tool: String? = null)
+
 @Composable
-fun AiPanel(c: Ink, note: NoteItem?, onOpenSettings: () -> Unit) {
+fun AiPanel(c: Ink, note: NoteItem?, onEdit: (NoteItem) -> Unit, onOpenSettings: () -> Unit) {
     val key = remember { SecureStore.loadKey() }
     val model = remember { SecureStore.loadModel() }
-    val messages = remember { mutableStateListOf<ChatMsg>() }
+    val messages = remember { mutableStateListOf<UiMsg>() }
     var input by remember { mutableStateOf("") }
     var sending by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
 
     LaunchedEffect(messages.size, sending) {
-        val target = messages.size
-        if (target > 0) listState.animateScrollToItem(target)
+        if (messages.size > 0) listState.animateScrollToItem(messages.size)
     }
 
     Column(Modifier.width(320.dp).fillMaxHeight().background(c.soft)) {
@@ -75,9 +77,7 @@ fun AiPanel(c: Ink, note: NoteItem?, onOpenSettings: () -> Unit) {
             ) {
                 BasicText("API 키를 등록하면 AI와 대화할 수 있어요.", style = TextStyle(color = c.faint, fontSize = 13.sp, lineHeight = 20.sp))
                 Spacer(Modifier.height(12.dp))
-                Box(
-                    Modifier.background(c.primary, RoundedCornerShape(8.dp)).clickable { onOpenSettings() }.padding(horizontal = 16.dp, vertical = 8.dp),
-                ) {
+                Box(Modifier.background(c.primary, RoundedCornerShape(8.dp)).clickable { onOpenSettings() }.padding(horizontal = 16.dp, vertical = 8.dp)) {
                     BasicText("설정 열기", style = TextStyle(color = Color.White, fontSize = 12.5.sp, fontWeight = FontWeight.Medium))
                 }
             }
@@ -98,7 +98,7 @@ fun AiPanel(c: Ink, note: NoteItem?, onOpenSettings: () -> Unit) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(Modifier.weight(1f)) {
-                        if (input.isEmpty()) BasicText("물어보기", style = TextStyle(color = c.faint, fontSize = 13.sp))
+                        if (input.isEmpty()) BasicText("물어보기 · 노트에 써달라고 해보세요", style = TextStyle(color = c.faint, fontSize = 12.5.sp))
                         BasicTextField(
                             value = input, onValueChange = { input = it },
                             textStyle = TextStyle(color = c.ink, fontSize = 13.sp),
@@ -112,16 +112,21 @@ fun AiPanel(c: Ink, note: NoteItem?, onOpenSettings: () -> Unit) {
                             .clickable(enabled = canSend) {
                                 val text = input.trim()
                                 input = ""
-                                messages.add(ChatMsg("user", text))
+                                messages.add(UiMsg("user", text))
                                 sending = true
                                 scope.launch {
                                     val convo = buildList {
                                         add(ChatMsg("system", systemPrompt(note)))
-                                        addAll(messages)
+                                        messages.forEach { add(ChatMsg(it.role, it.content)) }
                                     }
-                                    val r = withContext(Dispatchers.IO) { NimClient.chat(key, model, convo) }
+                                    val r = withContext(Dispatchers.IO) {
+                                        NimClient.chatTools(key, model, convo, NimClient.noteTools())
+                                    }
                                     sending = false
-                                    messages.add(ChatMsg("assistant", r.getOrElse { "⚠ ${it.message}" }))
+                                    r.fold(
+                                        { res -> handleResult(res, note, onEdit, messages) },
+                                        { messages.add(UiMsg("assistant", "⚠ ${it.message}")) },
+                                    )
                                 }
                             },
                         contentAlignment = Alignment.Center,
@@ -134,23 +139,81 @@ fun AiPanel(c: Ink, note: NoteItem?, onOpenSettings: () -> Unit) {
     }
 }
 
+private fun handleResult(res: ChatResult, note: NoteItem?, onEdit: (NoteItem) -> Unit, messages: MutableList<UiMsg>) {
+    when (res) {
+        is ChatResult.Text -> messages.add(UiMsg("assistant", res.content.ifBlank { "(빈 응답)" }))
+        is ChatResult.ToolCalls -> {
+            if (note == null) {
+                messages.add(UiMsg("assistant", "먼저 왼쪽에서 노트를 선택해 주세요."))
+                return
+            }
+            var applied = 0
+            res.calls.forEach { call ->
+                val txt = call.args.optString("text", "")
+                if (txt.isNotBlank()) {
+                    applyTool(note, call.name, txt)
+                    applied++
+                }
+            }
+            if (applied > 0) {
+                onEdit(note)
+                messages.add(UiMsg("assistant", "노트에 정리해 넣었어요.", tool = "노트에 작성함"))
+            } else {
+                messages.add(UiMsg("assistant", "적용할 내용이 없었어요."))
+            }
+        }
+    }
+}
+
+/** 도구를 실제 노트에 적용하고, AI가 쓴 범위를 ai-mark로 기록. */
+private fun applyTool(note: NoteItem, name: String, text: String) {
+    when (name) {
+        "append_note" -> {
+            val base = note.body
+            val gap = if (base.isEmpty() || base.endsWith("\n")) "" else "\n"
+            val start = base.length + gap.length
+            note.body = base + gap + text
+            note.aiRanges.add(start to note.body.length)
+        }
+        "rewrite_note" -> {
+            note.body = text
+            note.aiRanges.clear()
+            note.aiRanges.add(0 to text.length)
+        }
+        else -> {
+            val start = note.body.length
+            note.body = note.body + text
+            note.aiRanges.add(start to note.body.length)
+        }
+    }
+    note.touch()
+}
+
 private fun systemPrompt(note: NoteItem?): String =
-    "당신은 사용자의 노트 작성을 돕는 조수입니다. 한국어로 간결하게 답하세요." +
+    "당신은 사용자의 노트 작성을 돕는 조수입니다. 한국어로 답하세요. " +
+        "사용자가 노트에 무언가를 쓰거나 정리·요약·추가해 달라고 하면, 일반 답변 대신 반드시 도구(append_note 또는 rewrite_note)를 호출해 노트를 직접 수정하세요. " +
+        "단순 질문에는 도구 없이 답하세요." +
         (note?.let { "\n\n[현재 노트]\n제목: ${it.title}\n본문:\n${it.body}" } ?: "")
 
 @Composable
-private fun Bubble(c: Ink, m: ChatMsg) {
+private fun Bubble(c: Ink, m: UiMsg) {
     val user = m.role == "user"
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = if (user) Arrangement.End else Arrangement.Start) {
+    Column(Modifier.fillMaxWidth(), horizontalAlignment = if (user) Alignment.End else Alignment.Start) {
         Box(
             Modifier.widthIn(max = 244.dp)
                 .background(if (user) c.primary else Color.Transparent, RoundedCornerShape(12.dp))
                 .padding(horizontal = if (user) 11.dp else 0.dp, vertical = if (user) 8.dp else 0.dp),
         ) {
-            BasicText(
-                m.content,
-                style = TextStyle(color = if (user) Color.White else c.ink, fontSize = 12.5.sp, lineHeight = 18.sp),
-            )
+            BasicText(m.content, style = TextStyle(color = if (user) Color.White else c.ink, fontSize = 12.5.sp, lineHeight = 18.sp))
+        }
+        if (m.tool != null) {
+            Spacer(Modifier.height(6.dp))
+            Row(
+                Modifier.background(c.localSoft, RoundedCornerShape(7.dp)).border(0.5.dp, c.local, RoundedCornerShape(7.dp)).padding(horizontal = 9.dp, vertical = 5.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                BasicText("✎ ${m.tool}", style = TextStyle(color = c.localInk, fontSize = 10.5.sp, fontWeight = FontWeight.Medium))
+            }
         }
     }
 }

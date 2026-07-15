@@ -10,6 +10,7 @@ tags: [changelog]
 - 날짜별 작업 내역. 최신이 위. (날짜 / 무엇을 / 왜 / 결과)
 
 ## 2026-07-15
+- **개발 M2.3 — 텍스트 작성 도구(tool calling) + ai-mark · M2 완료**: NIM 도구 호출 처리(`chatTools`/`noteTools` — append_note·rewrite_note). AI가 "노트에 정리/추가" 요청 시 도구를 호출해 **본문을 직접 수정**하고, 쓴 범위를 **보라 하이라이트(ai-mark)** 로 표시(`aiMarkTransform`). AI 패널에 "노트에 작성함" teal 칩. 사용자가 본문 편집하면 마크 해제. → **M2 완료(AI가 노트에 직접 쓰기)**.
 - **M2.2 수정 — 채팅 타임아웃 해결 + 모델 변경**: 채팅 POST가 `request timed out` → **HTTP/2 POST 멈춤** 이슈로 진단, `HttpClient`를 **HTTP/1.1**로 강제해 해결. 무료 티어에서 `llama-3.3-70b`가 62초~90초 타임아웃으로 사실상 불가 → **기본 모델을 `llama-3.1-8b`(0.5~0.7초)로 변경**, 설정에 "8b가 가장 빠름" 안내. (진단용 임시 코드로 원인 확정 후 제거)
 - **개발 M2.2 — AI 도우미 패널 (NIM 채팅)**: 우측 대화 패널(`AiPanel.kt`) — 사용자/AI 말풍선, 입력·전송, 현재 노트를 컨텍스트로 포함. NIM `/v1/chat/completions` 연동(`NimClient.chat`, org.json). 저장된 키·모델 사용, 키 없으면 설정 유도. 3분할 레이아웃(목록·편집기·AI) 완성, UI 실행 검증. (E2E 대화는 사용자 키로 확인)
 - **개발 M2.1 — 설정 페이지 + API 키 저장**: 설정 화면(`SettingsUi.kt`) — API 키 마스킹 입력·표시토글, 발급 링크, 모델 선택(3종), 연결 테스트, 저장. 키는 **Windows DPAPI로 암호화 저장**(`SecureStore.kt`, jna-platform), 모델명은 config.properties. NIM 연결 테스트(`NimClient.kt`, `/v1/models`). 첫 실행(키 없음) 시 설정 화면 우선, 사이드바 하단 '설정' 진입. 실행 캡처로 검증. (키는 사용자가 앱에서 직접 입력)

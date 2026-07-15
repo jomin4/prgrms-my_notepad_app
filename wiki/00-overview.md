@@ -36,5 +36,6 @@ tags: [overview]
 - [x] 개발 M1.3 — 로컬 저장(SQLDelight) · **M1 완료**
 - [x] 개발 M2.1 — 설정 페이지 + API 키 암호화 저장(DPAPI) + 연결 테스트
 - [x] 개발 M2.2 — AI 도우미 패널(NIM 채팅) · 3분할 레이아웃 완성
-- [ ] 개발 M2.3 — 텍스트 작성 도구(tool calling) + ai-mark ← 다음
+- [x] 개발 M2.3 — 텍스트 작성 도구 + ai-mark · **M2 완료(AI가 노트에 직접 쓰기)**
+- [ ] 다음: 배포(.msi 패키징) 또는 2차(그림 캔버스)
 - 상세: [진행 로그](_meta/changelog.md)
