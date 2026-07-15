@@ -10,6 +10,7 @@ tags: [changelog]
 - 날짜별 작업 내역. 최신이 위. (날짜 / 무엇을 / 왜 / 결과)
 
 ## 2026-07-15
+- **개발 M2.2 — AI 도우미 패널 (NIM 채팅)**: 우측 대화 패널(`AiPanel.kt`) — 사용자/AI 말풍선, 입력·전송, 현재 노트를 컨텍스트로 포함. NIM `/v1/chat/completions` 연동(`NimClient.chat`, org.json). 저장된 키·모델 사용, 키 없으면 설정 유도. 3분할 레이아웃(목록·편집기·AI) 완성, UI 실행 검증. (E2E 대화는 사용자 키로 확인)
 - **개발 M2.1 — 설정 페이지 + API 키 저장**: 설정 화면(`SettingsUi.kt`) — API 키 마스킹 입력·표시토글, 발급 링크, 모델 선택(3종), 연결 테스트, 저장. 키는 **Windows DPAPI로 암호화 저장**(`SecureStore.kt`, jna-platform), 모델명은 config.properties. NIM 연결 테스트(`NimClient.kt`, `/v1/models`). 첫 실행(키 없음) 시 설정 화면 우선, 사이드바 하단 '설정' 진입. 실행 캡처로 검증. (키는 사용자가 앱에서 직접 입력)
 - **개발 M1.3 — 로컬 저장 (SQLDelight/SQLite) · M1 완료**: `note` 테이블 + 저장소(`NotesStore.kt`, `Note.sq`)로 노트를 `~/.local-ai-note/notes.db`에 영속화. 저장→재시작→불러오기 왕복 검증(첫 실행 seed 저장 → 재시작 시 DB 로드). 이로써 **M1(핵심 노트 CRUD + 로컬 저장) 완료**. 다음은 M2(NVIDIA NIM 연결).
 - **개발 M1.2 — 노트 UI (Quiet Ink)**: 좌측 목록(검색·새 노트·미리보기) + 중앙 세리프 편집기 + 삭제. Compose로 DESIGN.md 토큰 구현(`Theme.kt`, `NotesUi.kt`). 선택 표시는 무채색, 보라는 새 노트 CTA에만. 실행 캡처로 렌더 검증(저장은 메모리, M1.3에서 영속화).

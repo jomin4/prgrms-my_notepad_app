@@ -105,6 +105,8 @@ private fun NotesScreen(c: Ink, onOpenSettings: () -> Unit) {
                 )
             }
         }
+        Box(Modifier.width(0.5.dp).fillMaxHeight().background(c.line))
+        AiPanel(c, selected, onOpenSettings)
     }
 }
 
