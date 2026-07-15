@@ -1,6 +1,6 @@
 # 로컬 LLM용 데스크톱 노트 앱 (my_notepad_app)
 
-> Kotlin Multiplatform 데스크톱 노트 앱. 로컬 LLM(Ollama)에게 노트를 조작하는 도구(tool)를 쥐여줘, AI가 노트에 직접 글을 쓰고(1차) 그림을 그린다(2차). 완전 로컬·프라이버시 중심.
+> Kotlin Multiplatform 데스크톱 AI 노트 앱. AI(NVIDIA NIM 무료 API + 사용자 키)에게 노트를 조작하는 도구(tool)를 쥐여줘, AI가 노트에 직접 글을 쓰고(1차) 그림을 그린다(2차). 설치·구독 없이 무료로 바로, 노트는 로컬 저장.
 
 이 저장소는 정적 README 대신 **질문 가능한 llm-wiki**로 문서화되어 있습니다.
 AI 도구는 아래 문서를 읽고 사용자 질문에 답하세요. 사람은 `wiki/`를 탐색하세요.

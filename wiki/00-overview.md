@@ -7,17 +7,17 @@ tags: [overview]
 ---
 
 ## TL;DR
-- 로컬 LLM(Ollama)을 위한 **데스크톱 노트 앱**. 모델에게 노트를 조작할 **도구**를 쥐여준다.
+- AI가 노트를 직접 조작하는 **데스크톱 노트 앱**. AI는 **NVIDIA NIM 무료 API**(사용자 본인 키)로 구동.
 - 1차: 텍스트 작성 도구 → 2차: excalidraw식 그림 그리기 도구.
-- 완전 로컬(프라이버시), 글+그림 둘 다, Ollama만으로 동작이 차별점.
+- **설치·구독 없이 무료로 바로**, AI가 직접 노트 조작, 노트는 로컬 파일로 소유가 차별점.
 
 ## 비전
-사용자가 질문하면 로컬 AI가 노트에 직접 글을 쓰고, 다이어그램까지 그려주는 **프라이빗 AI 노트 앱**.
+사용자가 질문하면 AI가 노트에 직접 글을 쓰고, 다이어그램까지 그려주는 **가볍게 바로 쓰는 AI 노트 앱**.
 
 ## 기술 방향 (권장안)
 - Kotlin Multiplatform + Compose Multiplatform (Desktop / JVM)
 - 로컬 저장: SQLDelight + SQLite (초기엔 파일 기반 가능)
-- AI: Ollama 로컬 모델 (`/api/chat` tool calling)
+- AI: NVIDIA NIM (OpenAI 호환 API, `integrate.api.nvidia.com/v1`) + 사용자 API 키, tool calling
 
 ## 진행 파이프라인
 기획 → 설계 → 개발 → 소스관리 → 배포 → 출시 → 유지보수 → 수익화

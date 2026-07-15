@@ -11,7 +11,7 @@ tags: [setup, readme]
 - 아직 작성 전 — 개발이 진행되면 실제 설치·실행 절차로 채워진다.
 
 ## 사전 준비 (예정)
-- Ollama 설치 및 로컬 모델 준비
+- NVIDIA NIM 무료 API 키 발급 (build.nvidia.com) → 앱 설정에 입력
 - (작성 예정)
 
 ## 설치 (예정)

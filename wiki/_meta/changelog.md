@@ -10,6 +10,7 @@ tags: [changelog]
 - 날짜별 작업 내역. 최신이 위. (날짜 / 무엇을 / 왜 / 결과)
 
 ## 2026-07-15
+- **AI 제공자 전환 — Ollama(로컬) → NVIDIA NIM(무료 API + 사용자 키)**: 설치 장벽 제거·효율 우선. 차별점을 '완전 로컬 프라이버시' → **'설치·구독 없이 무료로 바로'(노트는 로컬 소유)**로 재정의. PRD·DESIGN·화면·개요·용어·README·llms.txt 일괄 갱신. AI 추론은 클라우드로 나가되 노트 저장은 로컬 유지.
 - **소스관리 세팅 + 원격 반영 자동화**: GitHub `prgrms-my_notepad_app`(Public) 생성·연결(기본 `main`). `.gitignore`, `scripts/sync-remote.sh`, `wiki/04-source-control/git-strategy.md` 추가. 규칙: **챕터 마무리마다 Claude가 자동으로 add→commit→push** (CLAUDE.md §6).
 - **PRD 작성(1차 MVP)**: `wiki/01-planning/prd.md`. 타겟(프라이버시 중시 지식노동자), 성공기준, 범위(노트관리·Ollama연동·텍스트 작성 도구·ai-mark), 비범위(그림 캔버스는 2차·클라우드·모바일 제외), 마일스톤 M1~M4, 가정 3개(플랫폼 Windows우선·Ollama 직접설치·Pro 수익화) 확인 대기.
 - **디자인 시스템 도입 — DESIGN.md 방식 채택**: getdesign.md의 DESIGN.md(Google Stitch) 포맷을 분석·적용. 우리 앱 고유 디자인 언어 **"Quiet Ink"**(무채색 크롬 + 보라=AI / teal=로컬·1차 / amber=2차, 세리프 노트본문·산세리프 UI·모노 상태, 시그니처=AI 보라 흔적)를 루트 `DESIGN.md`에 정식 포맷(프론트매터 토큰 + 본문 규칙)으로 저술. 앞으로 모든 UI 작업의 근거.
