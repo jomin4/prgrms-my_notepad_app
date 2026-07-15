@@ -47,6 +47,7 @@ import domain.NoteItem
 import domain.ToolCatalog
 import domain.ToolRegistry
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 import ui.theme.Ink
 
 private data class UiMsg(val role: String, val content: String, val tool: String? = null)
@@ -55,8 +56,11 @@ private data class UiMsg(val role: String, val content: String, val tool: String
 fun AiPanel(c: Ink, targetNote: NoteItem?, onEdit: (NoteItem) -> Unit, onOpenSettings: () -> Unit, onClose: () -> Unit) {
     val key = remember { SecureStore.loadKey() }
     val engine = remember { ChatEngine() }
+    val enabledTools = remember { ToolCatalog.all().filter { SecureStore.isToolEnabled(it.name) } }
     var model by remember { mutableStateOf(SecureStore.loadModel()) }
     var modelMenu by remember { mutableStateOf(false) }
+    val activeTools = remember { mutableStateListOf<String>() }
+    var toolMenu by remember { mutableStateOf(false) }
     val messages = remember { mutableStateListOf<UiMsg>() }
     var input by remember { mutableStateOf("") }
     var sending by remember { mutableStateOf(false) }
@@ -88,10 +92,7 @@ fun AiPanel(c: Ink, targetNote: NoteItem?, onEdit: (NoteItem) -> Unit, onOpenSet
         if (modelMenu) {
             Column(Modifier.fillMaxWidth().background(c.soft).padding(vertical = 4.dp)) {
                 SecureStore.MODELS.forEach { m ->
-                    Row(
-                        Modifier.fillMaxWidth().clickable { model = m; SecureStore.saveModel(m); modelMenu = false }.padding(horizontal = 15.dp, vertical = 7.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
+                    Row(Modifier.fillMaxWidth().clickable { model = m; SecureStore.saveModel(m); modelMenu = false }.padding(horizontal = 15.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
                         BasicText(if (m == model) "● " else "○ ", style = TextStyle(color = if (m == model) c.primary else c.faint, fontSize = 11.sp))
                         BasicText(m.substringAfterLast('/'), style = TextStyle(color = c.body, fontFamily = FontFamily.Monospace, fontSize = 11.5.sp))
                     }
@@ -113,52 +114,111 @@ fun AiPanel(c: Ink, targetNote: NoteItem?, onEdit: (NoteItem) -> Unit, onOpenSet
                     BasicText("설정 열기", style = TextStyle(color = Color.White, fontSize = 12.5.sp, fontWeight = FontWeight.Medium))
                 }
             }
-        } else {
-            LazyColumn(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 13.dp), state = listState) {
-                item { Spacer(Modifier.height(10.dp)) }
-                items(messages.size) { i ->
-                    Bubble(c, messages[i])
-                    Spacer(Modifier.height(10.dp))
-                }
-                if (sending) item { BasicText("생각 중…", style = TextStyle(color = c.faint, fontSize = 12.sp)) }
+            return@Column
+        }
+
+        LazyColumn(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 13.dp), state = listState) {
+            item { Spacer(Modifier.height(10.dp)) }
+            items(messages.size) { i ->
+                Bubble(c, messages[i])
+                Spacer(Modifier.height(10.dp))
             }
-            Box(Modifier.padding(11.dp)) {
-                Row(
-                    Modifier.fillMaxWidth().background(c.surface, RoundedCornerShape(10.dp)).border(0.5.dp, c.line2, RoundedCornerShape(10.dp)).padding(horizontal = 10.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(Modifier.weight(1f)) {
-                        if (input.isEmpty()) BasicText("물어보기 · 노트에 써달라고 해보세요", style = TextStyle(color = c.faint, fontSize = 12.5.sp))
-                        BasicTextField(input, { input = it }, textStyle = TextStyle(color = c.ink, fontSize = 13.sp), cursorBrush = SolidColor(c.primary), modifier = Modifier.fillMaxWidth())
+            if (sending) item { BasicText("생각 중…", style = TextStyle(color = c.faint, fontSize = 12.sp)) }
+        }
+
+        // 도구 선택 메뉴 ("+")
+        if (toolMenu) {
+            Column(Modifier.fillMaxWidth().background(c.soft)) {
+                Box(Modifier.padding(horizontal = 13.dp, vertical = 7.dp)) {
+                    BasicText("도구 — 선택하면 그 도구만 사용합니다", style = TextStyle(color = c.faint, fontSize = 11.sp))
+                }
+                if (enabledTools.isEmpty()) {
+                    Box(Modifier.padding(horizontal = 13.dp, vertical = 7.dp)) {
+                        BasicText("설정에서 켠 도구가 없습니다", style = TextStyle(color = c.faint, fontSize = 11.5.sp))
                     }
-                    Spacer(Modifier.width(8.dp))
-                    val canSend = input.isNotBlank() && !sending
-                    Box(
-                        Modifier.size(28.dp).background(if (canSend) c.primary else c.line2, RoundedCornerShape(7.dp)).clickable(enabled = canSend) {
-                            val text = input.trim()
-                            input = ""
-                            val note = targetNote
-                            messages.add(UiMsg("user", text))
-                            sending = true
-                            scope.launch {
-                                val history = messages.map { ChatMsg(it.role, it.content) }
-                                val registry = ToolRegistry(ToolCatalog.all().filter { SecureStore.isToolEnabled(it.name) })
-                                val outcome = engine.send(key, model, note, history, registry)
-                                sending = false
-                                when (outcome) {
-                                    is ChatEngine.Outcome.Reply -> messages.add(UiMsg("assistant", outcome.text))
-                                    is ChatEngine.Outcome.Applied -> {
-                                        if (note != null) onEdit(note)
-                                        messages.add(UiMsg("assistant", outcome.text, tool = outcome.toolLabel))
-                                    }
-                                    is ChatEngine.Outcome.Failed -> messages.add(UiMsg("assistant", "⚠ ${outcome.message}"))
-                                }
-                            }
-                        },
-                        contentAlignment = Alignment.Center,
+                }
+                enabledTools.forEach { tool ->
+                    val on = tool.name in activeTools
+                    Row(
+                        Modifier.fillMaxWidth().clickable { if (on) activeTools.remove(tool.name) else activeTools.add(tool.name) }.padding(horizontal = 13.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        BasicText("↑", style = TextStyle(color = Color.White, fontSize = 14.sp))
+                        BasicText(if (on) "● " else "○ ", style = TextStyle(color = if (on) c.primary else c.faint, fontSize = 12.sp))
+                        Column(Modifier.weight(1f)) {
+                            BasicText(tool.name, style = TextStyle(color = c.ink, fontFamily = FontFamily.Monospace, fontSize = 12.sp, fontWeight = FontWeight.Medium))
+                            BasicText(tool.description, style = TextStyle(color = c.faint, fontSize = 10.5.sp))
+                        }
                     }
+                }
+            }
+        }
+        // 선택된 도구 칩
+        if (activeTools.isNotEmpty()) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 11.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                activeTools.forEach { name ->
+                    Row(
+                        Modifier.padding(end = 6.dp).background(c.primarySoft, RoundedCornerShape(999.dp)).clickable { activeTools.remove(name) }.padding(horizontal = 9.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        BasicText(name, style = TextStyle(color = c.primary, fontFamily = FontFamily.Monospace, fontSize = 10.5.sp, fontWeight = FontWeight.Medium))
+                        BasicText("  ✕", style = TextStyle(color = c.primary, fontSize = 10.sp))
+                    }
+                }
+            }
+        }
+
+        // 입력창 (+ 도구 · 입력 · 전송)
+        Box(Modifier.padding(11.dp)) {
+            Row(
+                Modifier.fillMaxWidth().background(c.surface, RoundedCornerShape(10.dp)).border(0.5.dp, c.line2, RoundedCornerShape(10.dp)).padding(horizontal = 8.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    Modifier.size(26.dp).background(if (toolMenu || activeTools.isNotEmpty()) c.primarySoft else Color.Transparent, RoundedCornerShape(7.dp)).clickable { toolMenu = !toolMenu },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    BasicText("+", style = TextStyle(color = if (toolMenu || activeTools.isNotEmpty()) c.primary else c.muted, fontSize = 17.sp))
+                }
+                Spacer(Modifier.width(6.dp))
+                Box(Modifier.weight(1f)) {
+                    if (input.isEmpty()) BasicText("물어보기 · 노트에 써달라고 해보세요", style = TextStyle(color = c.faint, fontSize = 12.5.sp))
+                    BasicTextField(input, { input = it }, textStyle = TextStyle(color = c.ink, fontSize = 13.sp), cursorBrush = SolidColor(c.primary), modifier = Modifier.fillMaxWidth())
+                }
+                Spacer(Modifier.width(8.dp))
+                val canSend = input.isNotBlank() && !sending
+                Box(
+                    Modifier.size(28.dp).background(if (canSend) c.primary else c.line2, RoundedCornerShape(7.dp)).clickable(enabled = canSend) {
+                        val text = input.trim()
+                        input = ""
+                        toolMenu = false
+                        val note = targetNote
+                        val picked = activeTools.toList()
+                        messages.add(UiMsg("user", text))
+                        sending = true
+                        scope.launch {
+                            val history = messages.map { ChatMsg(it.role, it.content) }
+                            val useTools = if (picked.isNotEmpty()) enabledTools.filter { it.name in picked } else enabledTools
+                            val registry = ToolRegistry(useTools)
+                            val toolChoice: Any = when {
+                                picked.size == 1 -> JSONObject().put("type", "function").put("function", JSONObject().put("name", picked[0]))
+                                picked.isNotEmpty() -> "required"
+                                else -> "auto"
+                            }
+                            val outcome = engine.send(key, model, note, history, registry, toolChoice)
+                            sending = false
+                            when (outcome) {
+                                is ChatEngine.Outcome.Reply -> messages.add(UiMsg("assistant", outcome.text))
+                                is ChatEngine.Outcome.Applied -> {
+                                    if (note != null) onEdit(note)
+                                    messages.add(UiMsg("assistant", outcome.text, tool = outcome.toolLabel))
+                                }
+                                is ChatEngine.Outcome.Failed -> messages.add(UiMsg("assistant", "⚠ ${outcome.message}"))
+                            }
+                        }
+                    },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    BasicText("↑", style = TextStyle(color = Color.White, fontSize = 14.sp))
                 }
             }
         }

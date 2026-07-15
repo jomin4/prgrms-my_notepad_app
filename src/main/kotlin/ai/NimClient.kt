@@ -50,13 +50,13 @@ object NimClient {
     }
 
     /** 도구를 포함해 대화. 모델이 도구를 호출하면 ToolCalls, 아니면 Text. (블로킹) */
-    fun chatTools(key: String, model: String, messages: List<ChatMsg>, tools: JSONArray): Result<ChatResult> {
+    fun chatTools(key: String, model: String, messages: List<ChatMsg>, tools: JSONArray, toolChoice: Any = "auto"): Result<ChatResult> {
         return try {
             val payload = JSONObject()
                 .put("model", model)
                 .put("messages", JSONArray(messages.map { JSONObject().put("role", it.role).put("content", it.content) }))
                 .put("tools", tools)
-                .put("tool_choice", "auto")
+                .put("tool_choice", toolChoice)
                 .put("temperature", 0.4)
                 .put("max_tokens", 1024)
             val req = HttpRequest.newBuilder(URI.create("$BASE/chat/completions"))

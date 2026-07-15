@@ -25,12 +25,13 @@ class ChatEngine {
         targetNote: NoteItem?,
         history: List<ChatMsg>,
         registry: ToolRegistry,
+        toolChoice: Any = "auto",
     ): Outcome = withContext(Dispatchers.IO) {
         val messages = buildList {
             add(ChatMsg("system", Prompt.system(targetNote)))
             addAll(history)
         }
-        NimClient.chatTools(key, model, messages, registry.toJson()).fold(
+        NimClient.chatTools(key, model, messages, registry.toJson(), toolChoice).fold(
             { res ->
                 when (res) {
                     is ChatResult.Text -> Outcome.Reply(res.content.ifBlank { "(빈 응답)" })
