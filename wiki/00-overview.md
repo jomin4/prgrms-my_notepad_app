@@ -29,5 +29,6 @@ tags: [overview]
 - [x] 디자인 시스템(DESIGN.md · Quiet Ink) + 프로덕션 화면 목업
 - [x] 기획서(PRD 1차 MVP) 작성 — 가정 확인 대기
 - [x] 소스관리 세팅(GitHub prgrms-my_notepad_app) + 원격 반영 자동화
-- [ ] 설계(데이터 모델·도구 스키마) ← 다음
+- [x] 방향 결정(Windows·설정 온보딩·수익화) + 설정 페이지 설계
+- [ ] 설계(데이터 모델·도구 스키마·NIM 연동 흐름) ← 다음
 - 상세: [진행 로그](_meta/changelog.md)

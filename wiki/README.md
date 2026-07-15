@@ -63,7 +63,7 @@ tags: []
 - [01 기획 안내](01-planning/_about.md) — MVP·타겟·차별화가 들어가는 곳
   - [PRD (1차 MVP)](01-planning/prd.md) — 범위·타겟·성공 기준·마일스톤
 - [02 설계 안내](02-design/_about.md) — 화면·데이터모델·아키텍처
-  - [화면 구성](02-design/screens.md) — 4영역 레이아웃 + [목업](02-design/ui-mockup.html)
+  - [화면 구성](02-design/screens.md) — 4영역 + 설정 · 목업 [메인](02-design/ui-mockup.html) · [설정](02-design/settings-mockup.html)
 - [03 개발 안내](03-development/_about.md) — 기능 명세·기술 결정(ADR)
 - [04 소스관리 안내](04-source-control/_about.md) — git·브랜치 전략
   - [Git 전략 & 원격 자동화](04-source-control/git-strategy.md) — 챕터마다 자동 push

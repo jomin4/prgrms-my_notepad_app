@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>설정 페이지 — API 키 등록 (Quiet Ink)</title>
+<style>
+  :root{
+    --canvas:#f6f6f4;--surface:#fff;--soft:#f1f1ee;--inset:#ecebe7;
+    --ink:#1a1a1e;--body:#3a3a40;--muted:#6f6e75;--faint:#a3a2a9;
+    --line:#e7e6e2;--line2:#d9d8d3;
+    --primary:#5b4bd6;--primary-h:#4d3ec2;--primary-soft:#ecebfb;
+    --local:#0e9e77;--local-soft:#e2f4ee;--local-ink:#0b6e54;
+    --sans:"Inter",-apple-system,"Segoe UI",Roboto,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --canvas:#151418;--surface:#1d1c22;--soft:#212028;--inset:#26252e;
+    --ink:#edecf0;--body:#c8c7ce;--muted:#918f99;--faint:#6a6872;
+    --line:#2b2a33;--line2:#3a3944;
+    --primary:#8f82f2;--primary-h:#a099f5;--primary-soft:#272348;
+    --local:#41c69c;--local-soft:#12332a;--local-ink:#7fdcc0;
+  }}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--canvas);color:var(--ink);font-family:var(--sans);font-size:13px;line-height:1.5;min-height:100vh;display:grid;place-items:center;padding:32px}
+  .ic{width:16px;height:16px;stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round;flex:none}
+  .win{width:100%;max-width:720px;background:var(--surface);border:1px solid var(--line2);border-radius:14px;overflow:hidden;box-shadow:0 24px 60px -30px rgba(20,18,40,.5)}
+  .tb{display:flex;align-items:center;gap:10px;height:50px;padding:0 16px;background:var(--soft);border-bottom:1px solid var(--line)}
+  .mk{width:23px;height:23px;border-radius:7px;background:var(--primary);color:#fff;display:grid;place-items:center}
+  .tt{font-weight:500}
+  .xc{margin-left:auto;color:var(--faint);width:28px;height:26px;display:grid;place-items:center;border-radius:6px}
+  .xc:hover{background:var(--inset)}
+  .set{padding:26px 30px;max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+  .grp{border:0.5px solid var(--line);border-radius:12px;background:var(--surface);padding:18px 20px}
+  .gt{font-weight:500;font-size:14px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .prov{font-size:10.5px;font-weight:500;color:var(--muted);background:var(--inset);padding:2px 8px;border-radius:999px;font-family:var(--mono)}
+  label{display:block;font-size:11px;font-weight:500;color:var(--muted);margin:14px 0 6px;letter-spacing:.02em}
+  label:first-of-type{margin-top:0}
+  .kf{display:flex;align-items:center;gap:8px;background:var(--inset);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+  .kf .dots{flex:1;font-family:var(--mono);letter-spacing:2px;color:var(--ink);font-size:14px;white-space:nowrap;overflow:hidden}
+  .kf .eye{color:var(--muted);display:grid;place-items:center;cursor:pointer}
+  .help{margin-top:7px;font-size:11.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:5px 10px;align-items:center}
+  .lnk{color:var(--primary);font-weight:500;cursor:pointer}
+  .safe{display:inline-flex;align-items:center;gap:4px;color:var(--local-ink)}
+  .sel{display:flex;align-items:center;background:var(--inset);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:13px}
+  .sel .mono{font-family:var(--mono);font-size:12.5px}
+  .sel .cv{margin-left:auto;color:var(--muted)}
+  .testrow{margin-top:16px;display:flex;align-items:center;gap:12px}
+  .btn2{background:var(--surface);border:1px solid var(--line2);border-radius:8px;padding:8px 14px;font-size:12.5px;font-weight:500;color:var(--ink);cursor:pointer}
+  .ok{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--local-ink)}
+  .ok .dot{width:7px;height:7px;border-radius:50%;background:var(--local)}
+  .seg3{display:inline-flex;background:var(--soft);border-radius:9px;padding:3px;gap:2px}
+  .seg3 span{font-size:12px;font-weight:500;color:var(--muted);padding:6px 14px;border-radius:6px;cursor:pointer}
+  .seg3 span.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.05)}
+  .foot{display:flex;justify-content:flex-end;gap:10px}
+  .btnp{background:var(--primary);color:#fff;border-radius:8px;padding:9px 22px;font-size:13px;font-weight:500;cursor:pointer}
+</style>
+</head>
+<body>
+  <div class="win">
+    <div class="tb">
+      <span class="mk"><svg class="ic" viewBox="0 0 16 16" style="width:14px;height:14px;stroke:#fff"><path d="M4 3.5h8M4 8h8M4 12.5h5"/></svg></span>
+      <span class="tt">설정</span>
+      <span class="xc"><svg class="ic" viewBox="0 0 16 16"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7"/></svg></span>
+    </div>
+    <div class="set">
+      <div class="grp">
+        <div class="gt">AI 연결 <span class="prov">NVIDIA NIM</span></div>
+        <label>API 키</label>
+        <div class="kf">
+          <span class="dots">••••••••••••••••••••••••••••</span>
+          <span class="eye"><svg class="ic" viewBox="0 0 16 16"><path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/></svg></span>
+        </div>
+        <div class="help"><span>무료 키 발급 <span class="lnk">build.nvidia.com →</span></span><span class="safe"><svg class="ic" viewBox="0 0 16 16" style="width:12px;height:12px"><rect x="3.5" y="7" width="9" height="6" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg> 이 기기에 암호화 저장</span></div>
+
+        <label>모델</label>
+        <div class="sel"><span class="mono">llama-3.3-70b-instruct</span><span class="cv"><svg class="ic" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4"/></svg></span></div>
+
+        <div class="testrow"><span class="btn2">연결 테스트</span><span class="ok"><span class="dot"></span> 연결됨</span></div>
+      </div>
+
+      <div class="grp">
+        <div class="gt">일반</div>
+        <label>테마</label>
+        <div class="seg3"><span class="on">시스템</span><span>라이트</span><span>다크</span></div>
+      </div>
+
+      <div class="foot"><span class="btnp">저장</span></div>
+    </div>
+  </div>
+</body>
+</html>
