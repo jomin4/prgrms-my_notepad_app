@@ -11,7 +11,7 @@ object SecureStore {
     private val keyFile = File(dir, "nim.key")
     private val cfgFile = File(dir, "config.properties")
 
-    const val DEFAULT_MODEL = "meta/llama-3.3-70b-instruct"
+    const val DEFAULT_MODEL = "meta/llama-3.1-8b-instruct"
 
     fun hasKey(): Boolean = keyFile.exists()
 

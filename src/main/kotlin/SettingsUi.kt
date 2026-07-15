@@ -39,9 +39,9 @@ import java.awt.Desktop
 import java.net.URI
 
 private val MODELS = listOf(
+    "meta/llama-3.1-8b-instruct",
     "meta/llama-3.3-70b-instruct",
     "meta/llama-3.1-70b-instruct",
-    "meta/llama-3.1-8b-instruct",
 )
 
 @Composable
@@ -112,6 +112,8 @@ fun Settings(c: Ink, onBack: () -> Unit) {
 
                 Spacer(Modifier.height(16.dp))
                 BasicText("모델", style = TextStyle(color = c.muted, fontSize = 11.sp, fontWeight = FontWeight.Medium))
+                Spacer(Modifier.height(3.dp))
+                BasicText("8b가 무료 티어에서 가장 빠릅니다", style = TextStyle(color = c.faint, fontSize = 11.sp))
                 Spacer(Modifier.height(6.dp))
                 MODELS.forEach { m ->
                     val sel = m == model

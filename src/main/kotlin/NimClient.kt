@@ -15,6 +15,7 @@ object NimClient {
     private const val BASE = "https://integrate.api.nvidia.com/v1"
 
     private val client: HttpClient = HttpClient.newBuilder()
+        .version(HttpClient.Version.HTTP_1_1)
         .connectTimeout(Duration.ofSeconds(15))
         .build()
 
