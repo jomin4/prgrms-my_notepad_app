@@ -10,6 +10,7 @@ tags: [changelog]
 - 날짜별 작업 내역. 최신이 위. (날짜 / 무엇을 / 왜 / 결과)
 
 ## 2026-07-15
+- **아키텍처 결정(ADR-001)**: 확장을 위해 LangGraph/MCP 검토 → **지금은 미도입** 결정(in-app Kotlin 도구 유지). LangGraph는 Python/JS라 데스크톱 번들 부담·정체성 충돌, 도구 2개엔 오버스펙. 재검토 트리거(도구 3~4개+ → Kotlin MCP / 멀티에이전트 → JVM 오케스트레이션) 기록. → `wiki/03-development/decisions/adr-001-ai-tool-management.md`.
 - **개발 M2.3 — 텍스트 작성 도구(tool calling) + ai-mark · M2 완료**: NIM 도구 호출 처리(`chatTools`/`noteTools` — append_note·rewrite_note). AI가 "노트에 정리/추가" 요청 시 도구를 호출해 **본문을 직접 수정**하고, 쓴 범위를 **보라 하이라이트(ai-mark)** 로 표시(`aiMarkTransform`). AI 패널에 "노트에 작성함" teal 칩. 사용자가 본문 편집하면 마크 해제. → **M2 완료(AI가 노트에 직접 쓰기)**.
 - **M2.2 수정 — 채팅 타임아웃 해결 + 모델 변경**: 채팅 POST가 `request timed out` → **HTTP/2 POST 멈춤** 이슈로 진단, `HttpClient`를 **HTTP/1.1**로 강제해 해결. 무료 티어에서 `llama-3.3-70b`가 62초~90초 타임아웃으로 사실상 불가 → **기본 모델을 `llama-3.1-8b`(0.5~0.7초)로 변경**, 설정에 "8b가 가장 빠름" 안내. (진단용 임시 코드로 원인 확정 후 제거)
 - **개발 M2.2 — AI 도우미 패널 (NIM 채팅)**: 우측 대화 패널(`AiPanel.kt`) — 사용자/AI 말풍선, 입력·전송, 현재 노트를 컨텍스트로 포함. NIM `/v1/chat/completions` 연동(`NimClient.chat`, org.json). 저장된 키·모델 사용, 키 없으면 설정 유도. 3분할 레이아웃(목록·편집기·AI) 완성, UI 실행 검증. (E2E 대화는 사용자 키로 확인)

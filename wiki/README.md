@@ -68,6 +68,7 @@ tags: []
   - [도구 스키마](02-design/tools-spec.md) — AI tool calling 함수 정의(1차 텍스트 4종)
   - [아키텍처 & NIM 흐름](02-design/architecture.md) — 계층·도구 호출 루프·보안
 - [03 개발 안내](03-development/_about.md) — 기능 명세·기술 결정(ADR)
+  - [ADR-001 AI 도구 관리](03-development/decisions/adr-001-ai-tool-management.md) — MCP/LangGraph 보류 이유·재검토 트리거
 - [04 소스관리 안내](04-source-control/_about.md) — git·브랜치 전략
   - [Git 전략 & 원격 자동화](04-source-control/git-strategy.md) — 챕터마다 자동 push
 - [05 배포 안내](05-deployment/_about.md) — 설치파일 빌드·릴리스
