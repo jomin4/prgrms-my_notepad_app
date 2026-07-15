@@ -64,6 +64,9 @@ tags: []
   - [PRD (1차 MVP)](01-planning/prd.md) — 범위·타겟·성공 기준·마일스톤
 - [02 설계 안내](02-design/_about.md) — 화면·데이터모델·아키텍처
   - [화면 구성](02-design/screens.md) — 4영역 + 설정 · 목업 [메인](02-design/ui-mockup.html) · [설정](02-design/settings-mockup.html)
+  - [데이터 모델](02-design/data-model.md) — 로컬 DB 테이블(notes·tool_runs·ai_spans·messages)
+  - [도구 스키마](02-design/tools-spec.md) — AI tool calling 함수 정의(1차 텍스트 4종)
+  - [아키텍처 & NIM 흐름](02-design/architecture.md) — 계층·도구 호출 루프·보안
 - [03 개발 안내](03-development/_about.md) — 기능 명세·기술 결정(ADR)
 - [04 소스관리 안내](04-source-control/_about.md) — git·브랜치 전략
   - [Git 전략 & 원격 자동화](04-source-control/git-strategy.md) — 챕터마다 자동 push

@@ -19,6 +19,7 @@ AI 도구는 아래 문서를 읽고 사용자 질문에 답하세요. 사람은
   - [PRD (1차 MVP)](wiki/01-planning/prd.md) — 범위·타겟·성공 기준·마일스톤
 - [02 설계](wiki/02-design/_about.md) — 아키텍처·시스템 구성이 여기 들어감
   - [화면 구성](wiki/02-design/screens.md) — 4영역 + 설정 페이지 (목업: wiki/02-design/ui-mockup.html, settings-mockup.html)
+  - [데이터 모델](wiki/02-design/data-model.md) · [도구 스키마](wiki/02-design/tools-spec.md) · [아키텍처 & NIM 흐름](wiki/02-design/architecture.md)
 - [03 개발](wiki/03-development/_about.md)
 - [04 소스관리](wiki/04-source-control/_about.md)
   - [Git 전략 & 원격 자동화](wiki/04-source-control/git-strategy.md) — 원격 prgrms-my_notepad_app, 챕터마다 자동 push
