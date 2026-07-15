@@ -10,6 +10,7 @@ tags: [changelog]
 - 날짜별 작업 내역. 최신이 위. (날짜 / 무엇을 / 왜 / 결과)
 
 ## 2026-07-15
+- **개발 M1.1 — 스캐폴드 + 첫 실행 창**: Compose 데스크톱 프로젝트 생성(`build.gradle.kts`, `Main.kt`). 툴체인 Kotlin 2.4 + Compose 1.9 + Gradle 9.6.1 on JDK 25 검증(JVM 타깃 21로 정합). `./gradlew run`으로 창 실행 확인. wrapper 커밋.
 - **설계(02) v1**: 데이터 모델(`data-model.md` — notes·tool_runs·ai_spans·messages, API 키는 DB 밖 보안 저장), 도구 스키마(`tools-spec.md` — 1차 텍스트 도구 4종 append/insert/replace_selection/rewrite, OpenAI 호환 JSON), 아키텍처·NIM 도구호출 루프(`architecture.md`). ERD·흐름 다이어그램 제시.
 - **결정 확정 + 설정 페이지 설계**: 플랫폼=Windows 우선, 키 온보딩=**설정 페이지**에서 API 키 등록(마스킹·암호화 저장·연결 테스트), 수익화=AI 연결 도구가 상품이며 **텍스트+그림까지 무료·유료 전환 이후**. 설정 목업 `wiki/02-design/settings-mockup.html` 추가, 메인 상단바에 설정(톱니) 진입점 추가. PRD·DESIGN(설정/API키 컴포넌트+보안규칙)·screens·수익화 문서 갱신.
 - **AI 제공자 전환 — Ollama(로컬) → NVIDIA NIM(무료 API + 사용자 키)**: 설치 장벽 제거·효율 우선. 차별점을 '완전 로컬 프라이버시' → **'설치·구독 없이 무료로 바로'(노트는 로컬 소유)**로 재정의. PRD·DESIGN·화면·개요·용어·README·llms.txt 일괄 갱신. AI 추론은 클라우드로 나가되 노트 저장은 로컬 유지.
